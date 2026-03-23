@@ -1,0 +1,39 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# production
+/build
+/dist
+/out
+/release
+
+# manual build artifacts
+/dist-main
+/dist-preload
+/dist-renderer
+
+# development build folder
+node_modules/.dev/
+.vite/
+
+# extension build artifacts (only compiled files)
+src/lib/electron-app/extensions/react-developer-tools/build/
+
+# misc
+.DS_Store
+.env
+*.local
+.eslintcache
+
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# system files
+Thumbs.db
+desktop.ini
