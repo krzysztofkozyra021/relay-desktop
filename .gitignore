@@ -37,3 +37,4 @@ yarn-error.log*
 # system files
 Thumbs.db
 desktop.ini
+node_modules
