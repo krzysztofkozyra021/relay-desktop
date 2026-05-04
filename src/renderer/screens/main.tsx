@@ -6,11 +6,12 @@ import {
   AlertTitle,
   AlertDescription,
 } from 'renderer/components/ui/alert'
+import type { Device } from 'shared/types'
 
 const { App } = window
 
 export function MainScreen() {
-  const [devices, setDevices] = useState<any[]>([])
+  const [devices, setDevices] = useState<Device[]>([])
 
   useEffect(() => {
     App.sayHelloFromBridge()
@@ -80,10 +81,10 @@ export function MainScreen() {
           </p>
         ) : (
           <ul className="space-y-4">
-            {devices.map((device: any, i: number) => (
+            {devices.map((device: Device) => (
               <li
                 className="p-4 bg-zinc-800 rounded-md border border-zinc-700"
-                key={i}
+                key={device.uuid}
               >
                 <div className="flex justify-between items-start">
                   <div>

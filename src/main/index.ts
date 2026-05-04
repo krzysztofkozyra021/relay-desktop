@@ -55,3 +55,9 @@ makeAppWithSingleInstanceLock(async () => {
     })
   }
 })
+
+app.on('will-quit', () => {
+  if (db) {
+    db.close()
+  }
+})

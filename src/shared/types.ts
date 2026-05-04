@@ -16,3 +16,18 @@ export interface WindowCreationByIPC {
   window(): BrowserWindowOrNull
   callback(window: BrowserWindow, event: IpcMainInvokeEvent): void
 }
+
+export interface Device {
+  id: number
+  uuid: string
+  name: string
+  type: string
+  model: string | null
+  brand: string | null
+  serial_number: string | null
+  location: string
+  installation_date: string | null
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
