@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
 
 
-const RELAY_BASE_URL = 'https://relay.app/r'
+const RELAY_BASE_URL = import.meta.env.VITE_RELAY_BASE_URL
 
 type Props = {
   deviceId: string
