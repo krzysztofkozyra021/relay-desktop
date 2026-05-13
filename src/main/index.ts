@@ -1,4 +1,4 @@
-import { app, ipcMain } from 'electron'
+import { app, ipcMain, dialog } from 'electron'
 import db from './database'
 import { makeAppWithSingleInstanceLock } from 'lib/electron-app/factories/app/instance'
 import { makeAppSetup } from 'lib/electron-app/factories/app/setup'
@@ -6,6 +6,7 @@ import { loadReactDevtools } from 'lib/electron-app/utils'
 import { ENVIRONMENT } from 'shared/constants'
 import { MainWindow } from './windows/main'
 import { waitFor } from 'shared/utils'
+import { writeFile } from 'node:fs/promises'
 
 makeAppWithSingleInstanceLock(async () => {
   await app.whenReady()
@@ -44,6 +45,20 @@ makeAppWithSingleInstanceLock(async () => {
         notes
       )
       return info.lastInsertRowid
+    }
+  )
+
+  ipcMain.handle(
+    'qr:save-png',
+    async (_, dataUrl: string, defaultName: string) => {
+      const { canceled, filePath } = await dialog.showSaveDialog({
+        defaultPath: defaultName,
+        filters: [{ name: 'PNG', extensions: ['png'] }],
+      })
+      if (canceled || !filePath) return null
+      const base64 = dataUrl.replace(/^data:image\/png;base64,/, '')
+      await writeFile(filePath, Buffer.from(base64, 'base64'))
+      return filePath
     }
   )
 
