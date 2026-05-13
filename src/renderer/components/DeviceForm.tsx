@@ -8,7 +8,7 @@ type FormData = {
   brand: string
   serial_number: string
   location: string
-  installation_date: string // YYYY-MM-DD z <input type="date">
+  installation_date: string 
   notes: string
 }
 
@@ -157,7 +157,7 @@ function GeneratedView({
   const { uuid, data } = gen
   return (
     <div className="w-full max-w-3xl">
-      {/* AKCJE — niewidoczne w druku */}
+      {}
       <div className="no-print flex justify-between items-center mb-6">
         <h2 className="text-2xl text-teal-300">Urządzenie zapisane ✓</h2>
         <div className="flex gap-2">
@@ -182,7 +182,7 @@ function GeneratedView({
         </div>
       </div>
 
-      {/* OBSZAR DRUKU — to widoczne na papierze */}
+      {}
       <div className="print-area bg-white text-black p-8 rounded-lg flex items-center gap-8">
         <QRPreview deviceId={uuid} size={220} />
         <div className="flex-1">

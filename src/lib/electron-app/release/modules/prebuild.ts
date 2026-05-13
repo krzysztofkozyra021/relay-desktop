@@ -1,4 +1,4 @@
-/** biome-ignore-all lint/correctness/noUnusedVariables: <> */
+
 import { resolve, basename } from 'node:path'
 import { writeFile } from 'node:fs/promises'
 

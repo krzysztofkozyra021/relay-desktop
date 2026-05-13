@@ -56,13 +56,13 @@ async function makeRelease() {
       `${COLORS.CYAN}> Opening the repository releases page...${COLORS.RESET}`
     )
 
-    await open(`https://github.com/${ownerAndRepo}/releases`)
+    await open(`https:
 
     console.log(
       `${COLORS.CYAN}> Opening the repository actions page...${COLORS.RESET}`
     )
 
-    await open(`https://github.com/${ownerAndRepo}/actions`)
+    await open(`https:
 
     console.log(`\n${COLORS.GREEN}Done!${COLORS.RESET}\n`)
   } catch ({ message }: any) {
