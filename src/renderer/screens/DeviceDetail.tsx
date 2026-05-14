@@ -10,6 +10,7 @@ import {
   Hash,
   MapPin,
   Pencil,
+  Printer,
   Tag,
   Trash2,
   Wrench,
@@ -161,7 +162,7 @@ export function DeviceDetail({
       <div className="h-full overflow-auto p-6 pb-28">
         <div className="max-w-2xl mx-auto space-y-6">
           {/* Device header */}
-          <div className="flex items-start gap-5">
+          <div className="print-area flex items-start gap-5">
             <div className="shrink-0 rounded-xl overflow-hidden border border-border">
               <QRPreview deviceId={device.uuid} size={104} />
             </div>
@@ -171,7 +172,7 @@ export function DeviceDetail({
                 <h2 className="text-xl font-bold text-foreground leading-tight">
                   {device.name}
                 </h2>
-                <div className="flex gap-1.5 shrink-0">
+                <div className="no-print flex gap-1.5 shrink-0">
                   {mode === 'view' ? (
                     <>
                       <IconBtn
@@ -232,14 +233,24 @@ export function DeviceDetail({
                 <Clock size={11} />
                 Ostatnia edycja: {formatDate(device.updated_at)}
               </div>
-              <button
-                className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-                onClick={() => exportDeviceQrAsPng(device.uuid)}
-                type="button"
-              >
-                <Download size={11} />
-                Eksportuj QR jako PNG
-              </button>
+              <div className="no-print flex items-center gap-3 mt-2">
+                <button
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  onClick={() => exportDeviceQrAsPng(device.uuid)}
+                  type="button"
+                >
+                  <Download size={11} />
+                  Eksportuj PNG
+                </button>
+                <button
+                  className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+                  onClick={() => window.print()}
+                  type="button"
+                >
+                  <Printer size={11} />
+                  Drukuj naklejkę
+                </button>
+              </div>
             </div>
           </div>
 
