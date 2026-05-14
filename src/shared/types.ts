@@ -17,6 +17,8 @@ export interface WindowCreationByIPC {
   callback(window: BrowserWindow, event: IpcMainInvokeEvent): void
 }
 
+export type DeviceStatus = 'active' | 'repair' | 'retired'
+
 export interface Device {
   id: number
   uuid: string
@@ -28,6 +30,44 @@ export interface Device {
   location: string
   installation_date: string | null
   notes: string | null
+  status: DeviceStatus
   created_at: string
   updated_at: string
+}
+
+export type UpdateDeviceInput = {
+  name: string
+  type: string
+  model: string
+  brand: string
+  serial_number: string
+  location: string
+  installation_date: string
+  notes: string
+  status: DeviceStatus
+}
+
+export type DeviceEventType =
+  | 'installation'
+  | 'fault_reported'
+  | 'fault_resolved'
+  | 'edit'
+  | 'note'
+
+export interface DeviceEvent {
+  id: number
+  device_uuid: string
+  type: DeviceEventType
+  title: string
+  description: string | null
+  user: string | null
+  created_at: string
+}
+
+export type AddEventInput = {
+  device_uuid: string
+  type: DeviceEventType
+  title: string
+  description?: string
+  user?: string
 }

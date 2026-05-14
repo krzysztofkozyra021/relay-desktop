@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { Download, Printer } from 'lucide-react'
+import { ArrowLeft, Download, Printer } from 'lucide-react'
 import { QRPreview, exportDeviceQrAsPng } from './ui/QRPreview'
 import { TEST_DEVICE_DEFAULTS } from '../debug/testData'
 
@@ -93,7 +93,7 @@ export function DeviceForm({
             Tryb testowy
           </span>
           <button
-            className="px-3 py-1.5 bg-warning hover:bg-amber-600 text-white text-xs font-semibold rounded-lg transition-colors"
+            className="px-3 py-1.5 bg-warning hover:bg-amber-600 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer"
             onClick={() => setForm({ ...TEST_DEVICE_DEFAULTS })}
             type="button"
           >
@@ -174,7 +174,7 @@ export function DeviceForm({
 
         <div className="flex justify-end">
           <button
-            className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-hover disabled:opacity-50 text-primary-foreground font-semibold rounded-xl transition-colors text-sm"
+            className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-primary-hover disabled:opacity-50 text-primary-foreground font-semibold rounded-xl transition-colors text-sm cursor-pointer disabled:cursor-default"
             disabled={!canSubmit}
             type="submit"
           >
@@ -258,7 +258,6 @@ function GeneratedView({
         </div>
       </div>
 
-
       <div className="print-area bg-card border border-border rounded-xl p-6 flex items-center gap-8">
         <div className="shrink-0">
           <QRPreview deviceId={uuid} size={200} />
@@ -297,10 +296,9 @@ function GeneratedView({
         </div>
       </div>
 
-
       <div className="no-print flex items-center gap-2 flex-wrap">
         <button
-          className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-primary-foreground text-sm font-medium rounded-lg transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-primary-foreground text-sm font-medium rounded-lg transition-colors cursor-pointer"
           onClick={() => window.print()}
           type="button"
         >
@@ -308,7 +306,7 @@ function GeneratedView({
           Drukuj naklejkę
         </button>
         <button
-          className="flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-border text-foreground text-sm font-medium rounded-lg border border-border transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-secondary hover:bg-border text-foreground text-sm font-medium rounded-lg border border-border transition-colors cursor-pointer"
           onClick={() => exportDeviceQrAsPng(uuid)}
           type="button"
         >
@@ -319,18 +317,19 @@ function GeneratedView({
         <div className="flex-1" />
 
         <button
-          className="px-4 py-2 bg-secondary hover:bg-border text-text-secondary text-sm rounded-lg border border-border transition-colors"
+          className="px-4 py-2 bg-secondary hover:bg-border text-text-secondary text-sm rounded-lg border border-border transition-colors cursor-pointer"
           onClick={onReset}
           type="button"
         >
           + Nowe urządzenie
         </button>
         <button
-          className="px-4 py-2 text-muted-foreground hover:text-foreground text-sm transition-colors"
+          className="flex items-center gap-1.5 px-4 py-2 text-muted-foreground hover:text-foreground text-sm transition-colors cursor-pointer"
           onClick={onBack}
           type="button"
         >
-          ← Wróć do listy
+          <ArrowLeft size={15} />
+          Wróć do listy
         </button>
       </div>
     </div>

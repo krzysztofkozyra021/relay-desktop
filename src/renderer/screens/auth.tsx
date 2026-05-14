@@ -39,7 +39,6 @@ export function AuthScreen({ onAuth }: { onAuth: (email: string) => void }) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-
       <div className="hidden lg:flex w-[400px] shrink-0 bg-brand-dark flex-col justify-between p-10">
         <div className="flex items-center gap-2.5">
           <Monitor className="text-accent-blue" size={22} />
@@ -64,7 +63,6 @@ export function AuthScreen({ onAuth }: { onAuth: (email: string) => void }) {
         </p>
       </div>
 
-
       <div className="flex-1 flex items-center justify-center p-8 overflow-auto">
         <div className="w-full max-w-md">
           {IS_TEST && (
@@ -78,7 +76,7 @@ export function AuthScreen({ onAuth }: { onAuth: (email: string) => void }) {
                 </span>
               </div>
               <button
-                className="shrink-0 px-3 py-1.5 bg-warning text-white text-xs font-semibold rounded-lg hover:bg-amber-600 transition-colors"
+                className="shrink-0 px-3 py-1.5 bg-warning text-white text-xs font-semibold rounded-lg hover:bg-amber-600 transition-colors cursor-pointer"
                 onClick={() => {
                   setEmail(TEST_USER.email)
                   setPassword(TEST_USER.password)
@@ -100,12 +98,11 @@ export function AuthScreen({ onAuth }: { onAuth: (email: string) => void }) {
                 : 'Uzupełnij formularz, aby rozpocząć.'}
             </p>
 
-
             <div className="flex bg-secondary rounded-xl p-1 mb-6 gap-1">
               {(['login', 'register'] as Tab[]).map(t => (
                 <button
                   className={cn(
-                    'flex-1 py-2 text-sm rounded-lg font-medium transition-all',
+                    'flex-1 py-2 text-sm rounded-lg font-medium transition-all cursor-pointer',
                     tab === t
                       ? 'bg-card text-primary shadow-sm'
                       : 'text-muted-foreground hover:text-foreground'
@@ -147,7 +144,7 @@ export function AuthScreen({ onAuth }: { onAuth: (email: string) => void }) {
               {error && <p className="text-sm text-danger">{error}</p>}
 
               <button
-                className="w-full py-2.5 mt-2 bg-primary hover:bg-primary-hover disabled:opacity-60 text-primary-foreground font-semibold rounded-xl transition-colors text-sm"
+                className="w-full py-2.5 mt-2 bg-primary hover:bg-primary-hover disabled:opacity-60 text-primary-foreground font-semibold rounded-xl transition-colors text-sm cursor-pointer disabled:cursor-default"
                 disabled={loading}
                 type="submit"
               >

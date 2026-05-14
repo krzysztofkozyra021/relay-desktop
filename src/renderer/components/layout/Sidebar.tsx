@@ -17,7 +17,6 @@ type Props = {
 export function Sidebar({ active, onNavigate, user, onLogout }: Props) {
   return (
     <div className="w-60 shrink-0 bg-sidebar flex flex-col h-full">
-
       <div className="flex items-center gap-2.5 px-5 h-16 border-b border-sidebar-border">
         <Monitor className="text-accent-blue shrink-0" size={20} />
         <span className="text-white font-bold text-base tracking-tight">
@@ -25,12 +24,11 @@ export function Sidebar({ active, onNavigate, user, onLogout }: Props) {
         </span>
       </div>
 
-
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {NAV_ITEMS.map(item => (
           <button
             className={cn(
-              'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-left',
+              'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-left cursor-pointer',
               active === item.id
                 ? 'bg-sidebar-accent text-sidebar-foreground font-medium'
                 : 'text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent/50'
@@ -44,7 +42,6 @@ export function Sidebar({ active, onNavigate, user, onLogout }: Props) {
           </button>
         ))}
       </nav>
-
 
       <div className="px-3 py-4 border-t border-sidebar-border">
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg">
@@ -60,7 +57,7 @@ export function Sidebar({ active, onNavigate, user, onLogout }: Props) {
             </p>
           </div>
           <button
-            className="text-sidebar-foreground/40 hover:text-sidebar-foreground transition-colors shrink-0"
+            className="text-sidebar-foreground/40 hover:text-sidebar-foreground transition-colors shrink-0 cursor-pointer"
             onClick={onLogout}
             title="Wyloguj"
             type="button"
