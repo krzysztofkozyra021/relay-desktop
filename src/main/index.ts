@@ -1,5 +1,7 @@
-import { app, ipcMain } from 'electron'
+import { app, ipcMain, dialog } from 'electron'
+import { writeFile } from 'node:fs/promises'
 import db from './database'
+import { DeviceRepository } from './repositories/DeviceRepository'
 import { makeAppWithSingleInstanceLock } from 'lib/electron-app/factories/app/instance'
 import { makeAppSetup } from 'lib/electron-app/factories/app/setup'
 import { loadReactDevtools } from 'lib/electron-app/utils'
@@ -7,19 +9,19 @@ import { ENVIRONMENT } from 'shared/constants'
 import { MainWindow } from './windows/main'
 import { waitFor } from 'shared/utils'
 
+const deviceRepo = new DeviceRepository(db)
+
 makeAppWithSingleInstanceLock(async () => {
   await app.whenReady()
   const window = await makeAppSetup(MainWindow)
 
-  ipcMain.handle('db:get-devices', () => {
-    const stmt = db.prepare('SELECT * FROM devices ORDER BY created_at DESC')
-    return stmt.all()
-  })
+  ipcMain.handle('db:get-devices', () => deviceRepo.findAll())
+
   ipcMain.handle(
     'db:add-device',
     (
       _,
-      deviceId: string,
+      uuid: string,
       name: string,
       type: string,
       model: string,
@@ -28,12 +30,9 @@ makeAppWithSingleInstanceLock(async () => {
       location: string,
       installation_date: string,
       notes: string
-    ) => {
-      const stmt = db.prepare(
-        'INSERT INTO devices (uuid, name, type, model, brand, serial_number, location, installation_date, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-      )
-      const info = stmt.run(
-        deviceId,
+    ) =>
+      deviceRepo.create({
+        uuid,
         name,
         type,
         model,
@@ -41,9 +40,21 @@ makeAppWithSingleInstanceLock(async () => {
         serial_number,
         location,
         installation_date,
-        notes
-      )
-      return info.lastInsertRowid
+        notes,
+      })
+  )
+
+  ipcMain.handle(
+    'qr:save-png',
+    async (_, dataUrl: string, defaultName: string) => {
+      const { canceled, filePath } = await dialog.showSaveDialog({
+        defaultPath: defaultName,
+        filters: [{ name: 'PNG', extensions: ['png'] }],
+      })
+      if (canceled || !filePath) return null
+      const base64 = dataUrl.replace(/^data:image\/png;base64,/, '')
+      await writeFile(filePath, Buffer.from(base64, 'base64'))
+      return filePath
     }
   )
 
@@ -57,7 +68,5 @@ makeAppWithSingleInstanceLock(async () => {
 })
 
 app.on('will-quit', () => {
-  if (db) {
-    db.close()
-  }
+  db.close()
 })

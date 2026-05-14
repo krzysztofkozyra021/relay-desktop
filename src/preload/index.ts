@@ -1,8 +1,26 @@
 import { contextBridge, ipcRenderer } from 'electron'
+import type { Device } from 'shared/types'
 
 declare global {
   interface Window {
     App: typeof API
+    dbAPI: {
+      getDevices: () => Promise<Device[]>
+      addDevice: (
+        deviceId: string,
+        name: string,
+        type: string,
+        model: string,
+        brand: string,
+        serial_number: string,
+        location: string,
+        installation_date: string,
+        notes: string
+      ) => Promise<number | bigint>
+    }
+    qrAPI: {
+      savePng: (dataUrl: string, defaultName: string) => Promise<string | null>
+    }
   }
 }
 
@@ -38,4 +56,9 @@ contextBridge.exposeInMainWorld('dbAPI', {
       installation_date,
       notes
     ),
+})
+
+contextBridge.exposeInMainWorld('qrAPI', {
+  savePng: (dataUrl: string, defaultName: string) =>
+    ipcRenderer.invoke('qr:save-png', dataUrl, defaultName),
 })
