@@ -44,6 +44,17 @@ Follow these steps to set up the project locally.
    make dev
    ```
 
+## Environment Variables
+
+Copy the `.env.example` file to `.env` to configure your local environment:
+
+```bash
+cp .env.example .env
+```
+
+**`VITE_APP_DEBUG`**
+# Set to "test" to enable debug mode: auto-fill buttons, seed DB, auto-login
+
 ## Development Tasks
 
 The project includes a `Makefile` to simplify typical development tasks using `pnpm`.
