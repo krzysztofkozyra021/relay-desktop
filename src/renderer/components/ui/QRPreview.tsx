@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import QRCode from 'qrcode'
 
-
 const RELAY_BASE_URL = import.meta.env.VITE_RELAY_BASE_URL
 
 type Props = {
@@ -27,7 +26,6 @@ export function QRPreview({ deviceId, size = 96, baseUrl }: Props) {
     <div
       aria-label={`QR dla urządzenia ${deviceId}`}
       className="bg-white rounded p-1 shrink-0"
-      
       dangerouslySetInnerHTML={{ __html: svg }}
       role="img"
       style={{ width: size, height: size }}
@@ -39,7 +37,7 @@ export async function exportDeviceQrAsPng(deviceUuid: string) {
   const dataUrl = await QRCode.toDataURL(`${RELAY_BASE_URL}/${deviceUuid}`, {
     errorCorrectionLevel: 'M',
     margin: 4,
-    width: 1024, 
+    width: 1024,
   })
   return window.qrAPI.savePng(dataUrl, `relay-${deviceUuid.slice(0, 8)}.png`)
 }
