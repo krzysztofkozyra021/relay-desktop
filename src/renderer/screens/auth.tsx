@@ -39,7 +39,7 @@ export function AuthScreen({ onAuth }: { onAuth: (email: string) => void }) {
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
-      {/* Brand panel */}
+
       <div className="hidden lg:flex w-[400px] shrink-0 bg-brand-dark flex-col justify-between p-10">
         <div className="flex items-center gap-2.5">
           <Monitor className="text-accent-blue" size={22} />
@@ -64,7 +64,7 @@ export function AuthScreen({ onAuth }: { onAuth: (email: string) => void }) {
         </p>
       </div>
 
-      {/* Form panel */}
+
       <div className="flex-1 flex items-center justify-center p-8 overflow-auto">
         <div className="w-full max-w-md">
           {IS_TEST && (
@@ -100,7 +100,7 @@ export function AuthScreen({ onAuth }: { onAuth: (email: string) => void }) {
                 : 'Uzupełnij formularz, aby rozpocząć.'}
             </p>
 
-            {/* Tab switcher */}
+
             <div className="flex bg-secondary rounded-xl p-1 mb-6 gap-1">
               {(['login', 'register'] as Tab[]).map(t => (
                 <button

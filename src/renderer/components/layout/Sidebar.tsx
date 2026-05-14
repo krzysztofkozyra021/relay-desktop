@@ -17,7 +17,7 @@ type Props = {
 export function Sidebar({ active, onNavigate, user, onLogout }: Props) {
   return (
     <div className="w-60 shrink-0 bg-sidebar flex flex-col h-full">
-      {/* Logo */}
+
       <div className="flex items-center gap-2.5 px-5 h-16 border-b border-sidebar-border">
         <Monitor className="text-accent-blue shrink-0" size={20} />
         <span className="text-white font-bold text-base tracking-tight">
@@ -25,7 +25,7 @@ export function Sidebar({ active, onNavigate, user, onLogout }: Props) {
         </span>
       </div>
 
-      {/* Navigation */}
+
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {NAV_ITEMS.map(item => (
           <button
@@ -45,7 +45,7 @@ export function Sidebar({ active, onNavigate, user, onLogout }: Props) {
         ))}
       </nav>
 
-      {/* User section */}
+
       <div className="px-3 py-4 border-t border-sidebar-border">
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg">
           <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold shrink-0">

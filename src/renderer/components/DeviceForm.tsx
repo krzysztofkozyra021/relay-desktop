@@ -258,7 +258,7 @@ function GeneratedView({
         </div>
       </div>
 
-      {/* Print-friendly device label */}
+
       <div className="print-area bg-card border border-border rounded-xl p-6 flex items-center gap-8">
         <div className="shrink-0">
           <QRPreview deviceId={uuid} size={200} />
@@ -297,7 +297,7 @@ function GeneratedView({
         </div>
       </div>
 
-      {/* Actions */}
+
       <div className="no-print flex items-center gap-2 flex-wrap">
         <button
           className="flex items-center gap-2 px-4 py-2 bg-primary hover:bg-primary-hover text-primary-foreground text-sm font-medium rounded-lg transition-colors"

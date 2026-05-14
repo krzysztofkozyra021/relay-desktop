@@ -51,7 +51,7 @@ export function MainScreen({
       />
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
+
         <header className="bg-card border-b border-border px-6 h-16 flex items-center justify-between shrink-0">
           <div>
             <h1 className="text-base font-semibold text-foreground">
@@ -98,7 +98,7 @@ export function MainScreen({
           </div>
         </header>
 
-        {/* Content */}
+
         <main className="flex-1 overflow-auto p-6">
           {mode === 'add' ? (
             <DeviceForm onBack={() => setMode('list')} onSaved={fetchDevices} />
