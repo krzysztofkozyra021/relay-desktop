@@ -3,7 +3,6 @@
 @plugin "tailwindcss-animate";
 
 :root {
-  /* Semantic tokens */
   --background: #f8fafc;
   --foreground: #0f172a;
   --card: #ffffff;
@@ -25,7 +24,6 @@
   --ring: #1d4ed8;
   --radius: 0.625rem;
 
-  /* Sidebar */
   --sidebar: #10213a;
   --sidebar-foreground: #ffffff;
   --sidebar-primary: #1d4ed8;
@@ -35,7 +33,6 @@
   --sidebar-border: #1e3455;
   --sidebar-ring: #38bdf8;
 
-  /* Brand extended palette */
   --brand-dark: #0f172a;
   --primary-hover: #2563eb;
   --accent-blue: #38bdf8;
@@ -81,7 +78,6 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  /* Extended brand palette */
   --color-brand-dark: var(--brand-dark);
   --color-primary-hover: var(--primary-hover);
   --color-accent-blue: var(--accent-blue);
