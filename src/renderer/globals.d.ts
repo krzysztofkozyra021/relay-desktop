@@ -1,9 +1,15 @@
-import type { Device } from 'shared/types'
+import type {
+  Device,
+  DeviceEvent,
+  UpdateDeviceInput,
+  AddEventInput,
+} from 'shared/types'
 
 declare global {
   interface Window {
     dbAPI: {
       getDevices: () => Promise<Device[]>
+      getDevice: (uuid: string) => Promise<Device | undefined>
       addDevice: (
         deviceId: string,
         name: string,
@@ -15,6 +21,10 @@ declare global {
         installation_date: string,
         notes: string
       ) => Promise<number | bigint>
+      updateDevice: (uuid: string, data: UpdateDeviceInput) => Promise<void>
+      deleteDevice: (uuid: string) => Promise<void>
+      getEvents: (device_uuid: string) => Promise<DeviceEvent[]>
+      addEvent: (data: AddEventInput) => Promise<number | bigint>
     }
   }
 }

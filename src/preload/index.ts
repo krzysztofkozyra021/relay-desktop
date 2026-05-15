@@ -1,11 +1,17 @@
 import { contextBridge, ipcRenderer } from 'electron'
-import type { Device } from 'shared/types'
+import type {
+  Device,
+  DeviceEvent,
+  UpdateDeviceInput,
+  AddEventInput,
+} from 'shared/types'
 
 declare global {
   interface Window {
     App: typeof API
     dbAPI: {
       getDevices: () => Promise<Device[]>
+      getDevice: (uuid: string) => Promise<Device | undefined>
       addDevice: (
         deviceId: string,
         name: string,
@@ -17,6 +23,10 @@ declare global {
         installation_date: string,
         notes: string
       ) => Promise<number | bigint>
+      updateDevice: (uuid: string, data: UpdateDeviceInput) => Promise<void>
+      deleteDevice: (uuid: string) => Promise<void>
+      getEvents: (device_uuid: string) => Promise<DeviceEvent[]>
+      addEvent: (data: AddEventInput) => Promise<number | bigint>
     }
     qrAPI: {
       savePng: (dataUrl: string, defaultName: string) => Promise<string | null>
@@ -33,6 +43,7 @@ contextBridge.exposeInMainWorld('App', API)
 
 contextBridge.exposeInMainWorld('dbAPI', {
   getDevices: () => ipcRenderer.invoke('db:get-devices'),
+  getDevice: (uuid: string) => ipcRenderer.invoke('db:get-device', uuid),
   addDevice: (
     deviceId: string,
     name: string,
@@ -56,6 +67,12 @@ contextBridge.exposeInMainWorld('dbAPI', {
       installation_date,
       notes
     ),
+  updateDevice: (uuid: string, data: UpdateDeviceInput) =>
+    ipcRenderer.invoke('db:update-device', uuid, data),
+  deleteDevice: (uuid: string) => ipcRenderer.invoke('db:delete-device', uuid),
+  getEvents: (device_uuid: string) =>
+    ipcRenderer.invoke('db:get-events', device_uuid),
+  addEvent: (data: AddEventInput) => ipcRenderer.invoke('db:add-event', data),
 })
 
 contextBridge.exposeInMainWorld('qrAPI', {
