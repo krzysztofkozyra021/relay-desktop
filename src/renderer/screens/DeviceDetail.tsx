@@ -3,13 +3,16 @@ import {
   AlertTriangle,
   Calendar,
   Check,
+  CheckCircle,
   Clock,
   Cpu,
   Download,
   FileText,
   Hash,
   MapPin,
+  MessageSquare,
   Pencil,
+  Play,
   Printer,
   Tag,
   Trash2,
@@ -20,11 +23,12 @@ import type {
   Device,
   DeviceEvent,
   DeviceStatus,
+  FaultReport,
+  FaultStatus,
   UpdateDeviceInput,
 } from 'shared/types'
 import { QRPreview, exportDeviceQrAsPng } from '../components/ui/QRPreview'
 import { StatusBadge } from '../components/device/StatusBadge'
-import { EventTimeline } from '../components/device/EventTimeline'
 import { FaultReportForm } from '../components/device/FaultReportForm'
 import { cn } from 'renderer/lib/utils'
 
@@ -66,6 +70,7 @@ export function DeviceDetail({
 }: Props) {
   const [device, setDevice] = useState<Device | null>(null)
   const [events, setEvents] = useState<DeviceEvent[]>([])
+  const [faults, setFaults] = useState<FaultReport[]>([])
   const [mode, setMode] = useState<Mode>('view')
   const [editData, setEditData] = useState<UpdateDeviceInput | null>(null)
   const [showFaultForm, setShowFaultForm] = useState(false)
@@ -73,12 +78,14 @@ export function DeviceDetail({
   const [saving, setSaving] = useState(false)
 
   const load = async () => {
-    const [dev, evts] = await Promise.all([
+    const [dev, evts, faultList] = await Promise.all([
       window.dbAPI.getDevice(deviceUuid),
       window.dbAPI.getEvents(deviceUuid),
+      window.faultAPI.getDeviceFaults(deviceUuid),
     ])
     if (dev) setDevice(dev)
     setEvents(evts)
+    setFaults(faultList)
   }
 
   useEffect(() => {
@@ -142,6 +149,13 @@ export function DeviceDetail({
     if (!device) return
     await window.dbAPI.deleteDevice(device.uuid)
     onDeleted()
+  }
+
+  const handleFaultStatusChange = async (id: number, status: FaultStatus) => {
+    const updated = await window.faultAPI.updateFaultStatus(id, status)
+    if (updated) {
+      setFaults(prev => prev.map(f => (f.id === id ? updated : f)))
+    }
   }
 
   const setEdit = <K extends keyof UpdateDeviceInput>(
@@ -376,7 +390,11 @@ export function DeviceDetail({
             <h3 className="text-sm font-semibold text-foreground mb-4">
               Historia zdarzeń
             </h3>
-            <EventTimeline events={events} />
+            <MergedTimeline
+              events={events}
+              faults={faults}
+              onFaultStatusChange={handleFaultStatusChange}
+            />
           </section>
 
           {showFaultForm && (
@@ -401,6 +419,182 @@ export function DeviceDetail({
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+const FAULT_STATUS_LABELS: Record<FaultStatus, string> = {
+  pending: 'Oczekuje',
+  in_progress: 'W trakcie',
+  resolved: 'Rozwiązana',
+}
+
+const FAULT_STATUS_COLORS: Record<FaultStatus, string> = {
+  pending: 'bg-warning/15 text-warning',
+  in_progress: 'bg-info/15 text-info',
+  resolved: 'bg-success/15 text-success',
+}
+
+function FaultStatusBadge({ status }: { status: FaultStatus }) {
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium',
+        FAULT_STATUS_COLORS[status]
+      )}
+    >
+      {FAULT_STATUS_LABELS[status]}
+    </span>
+  )
+}
+
+const EVENT_CFG: Record<
+  DeviceEvent['type'],
+  { icon: React.ReactNode; bg: string; text: string }
+> = {
+  installation: {
+    icon: <Play size={13} />,
+    bg: 'bg-foreground/10',
+    text: 'text-foreground',
+  },
+  fault_reported: {
+    icon: <AlertTriangle size={13} />,
+    bg: 'bg-warning/15',
+    text: 'text-warning',
+  },
+  fault_resolved: {
+    icon: <CheckCircle size={13} />,
+    bg: 'bg-success/15',
+    text: 'text-success',
+  },
+  edit: {
+    icon: <Pencil size={13} />,
+    bg: 'bg-info/15',
+    text: 'text-info',
+  },
+  note: {
+    icon: <MessageSquare size={13} />,
+    bg: 'bg-muted',
+    text: 'text-muted-foreground',
+  },
+}
+
+type TimelineItem =
+  | { kind: 'event'; data: DeviceEvent; at: string }
+  | { kind: 'fault'; data: FaultReport; at: string }
+
+function MergedTimeline({
+  events,
+  faults,
+  onFaultStatusChange,
+}: {
+  events: DeviceEvent[]
+  faults: FaultReport[]
+  onFaultStatusChange: (id: number, status: FaultStatus) => Promise<void>
+}) {
+  const items: TimelineItem[] = [
+    ...events.map(e => ({ kind: 'event' as const, data: e, at: e.created_at })),
+    ...faults.map(f => ({ kind: 'fault' as const, data: f, at: f.created_at })),
+  ].sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime())
+
+  if (items.length === 0) {
+    return <p className="text-sm text-muted-foreground italic">Brak zdarzeń.</p>
+  }
+
+  return (
+    <div>
+      {items.map((item, i) => {
+        const isLast = i === items.length - 1
+        if (item.kind === 'event') {
+          const e = item.data
+          const cfg = EVENT_CFG[e.type]
+          return (
+            <div className="flex gap-4 relative" key={`event-${e.id}`}>
+              {!isLast && (
+                <div className="absolute left-4 top-8 bottom-0 w-px bg-border" />
+              )}
+              <div
+                className={cn(
+                  'relative z-10 shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-0.5',
+                  cfg.bg,
+                  cfg.text
+                )}
+              >
+                {cfg.icon}
+              </div>
+              <div className="flex-1 pb-6">
+                <p className="text-xs text-muted-foreground mb-0.5">
+                  {formatDate(e.created_at)}
+                </p>
+                <p className="text-sm font-semibold text-foreground">
+                  {e.title}
+                </p>
+                {e.description && (
+                  <p className="text-sm text-text-secondary mt-1 leading-relaxed">
+                    {e.description}
+                  </p>
+                )}
+                {e.user && (
+                  <p className="text-xs text-muted-foreground italic mt-1">
+                    Użytkownik: {e.user}
+                  </p>
+                )}
+              </div>
+            </div>
+          )
+        }
+        const f = item.data
+        return (
+          <div className="flex gap-4 relative" key={`fault-${f.id}`}>
+            {!isLast && (
+              <div className="absolute left-4 top-8 bottom-0 w-px bg-border" />
+            )}
+            <div className="relative z-10 shrink-0 w-8 h-8 rounded-full flex items-center justify-center mt-0.5 bg-warning/15 text-warning">
+              <AlertTriangle size={13} />
+            </div>
+            <div className="flex-1 pb-6">
+              <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                <p className="text-xs text-muted-foreground">
+                  {formatDate(f.created_at)}
+                </p>
+                <FaultStatusBadge status={f.status} />
+              </div>
+              <p className="text-sm font-semibold text-foreground">{f.title}</p>
+              {f.description && (
+                <p className="text-sm text-text-secondary mt-1 leading-relaxed">
+                  {f.description}
+                </p>
+              )}
+              {f.reported_by && (
+                <p className="text-xs text-muted-foreground italic mt-1">
+                  Zgłaszający: {f.reported_by}
+                  {f.contact ? ` · ${f.contact}` : ''}
+                </p>
+              )}
+              {f.status !== 'resolved' && (
+                <div className="flex gap-2 mt-2">
+                  {f.status === 'pending' && (
+                    <button
+                      className="px-2.5 py-1 text-xs font-medium bg-info/10 hover:bg-info/20 text-info rounded-lg transition-colors cursor-pointer"
+                      onClick={() => onFaultStatusChange(f.id, 'in_progress')}
+                      type="button"
+                    >
+                      Przyjmij
+                    </button>
+                  )}
+                  <button
+                    className="px-2.5 py-1 text-xs font-medium bg-success/10 hover:bg-success/20 text-success rounded-lg transition-colors cursor-pointer"
+                    onClick={() => onFaultStatusChange(f.id, 'resolved')}
+                    type="button"
+                  >
+                    Rozwiąż
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }

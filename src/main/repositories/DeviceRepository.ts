@@ -17,6 +17,7 @@ export interface IDeviceRepository {
   findAll(): Device[]
   findByUuid(uuid: string): Device | undefined
   create(input: CreateDeviceInput): number | bigint
+  upsert(input: CreateDeviceInput): void
   update(uuid: string, input: UpdateDeviceInput): void
   delete(uuid: string): void
 }
@@ -53,6 +54,30 @@ export class DeviceRepository implements IDeviceRepository {
     ).lastInsertRowid
   }
 
+  upsert(input: CreateDeviceInput): void {
+    this.db
+      .prepare(
+        `INSERT INTO devices (uuid, name, type, model, brand, serial_number, location, installation_date, notes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(uuid) DO UPDATE SET
+           name = excluded.name, type = excluded.type, model = excluded.model,
+           brand = excluded.brand, serial_number = excluded.serial_number,
+           location = excluded.location, installation_date = excluded.installation_date,
+           notes = excluded.notes, updated_at = CURRENT_TIMESTAMP`
+      )
+      .run(
+        input.uuid,
+        input.name,
+        input.type,
+        input.model,
+        input.brand,
+        input.serial_number,
+        input.location,
+        input.installation_date,
+        input.notes
+      )
+  }
+
   update(uuid: string, input: UpdateDeviceInput): void {
     this.db
       .prepare(
@@ -78,5 +103,16 @@ export class DeviceRepository implements IDeviceRepository {
 
   delete(uuid: string): void {
     this.db.prepare('DELETE FROM devices WHERE uuid = ?').run(uuid)
+  }
+
+  deleteAllExcept(uuids: string[]): void {
+    if (uuids.length === 0) {
+      this.db.prepare('DELETE FROM devices').run()
+      return
+    }
+    const placeholders = uuids.map(() => '?').join(', ')
+    this.db
+      .prepare(`DELETE FROM devices WHERE uuid NOT IN (${placeholders})`)
+      .run(...uuids)
   }
 }

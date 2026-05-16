@@ -4,11 +4,25 @@ import type {
   DeviceEvent,
   UpdateDeviceInput,
   AddEventInput,
+  ApiLoginResult,
+  FaultReport,
+  FaultStatus,
 } from 'shared/types'
 
 declare global {
   interface Window {
     App: typeof API
+    authAPI: {
+      login: (email: string, password: string) => Promise<ApiLoginResult>
+      register: (
+        name: string,
+        email: string,
+        password: string,
+        passwordConfirmation: string
+      ) => Promise<ApiLoginResult>
+      logout: () => Promise<void>
+      syncDevices: () => Promise<Device[]>
+    }
     dbAPI: {
       getDevices: () => Promise<Device[]>
       getDevice: (uuid: string) => Promise<Device | undefined>
@@ -31,6 +45,14 @@ declare global {
     qrAPI: {
       savePng: (dataUrl: string, defaultName: string) => Promise<string | null>
     }
+    faultAPI: {
+      getFaults: (status?: FaultStatus) => Promise<FaultReport[]>
+      getDeviceFaults: (uuid: string) => Promise<FaultReport[]>
+      updateFaultStatus: (
+        id: number,
+        status: FaultStatus
+      ) => Promise<FaultReport | null>
+    }
   }
 }
 
@@ -40,6 +62,26 @@ const API = {
 }
 
 contextBridge.exposeInMainWorld('App', API)
+
+contextBridge.exposeInMainWorld('authAPI', {
+  login: (email: string, password: string) =>
+    ipcRenderer.invoke('api:login', email, password),
+  register: (
+    name: string,
+    email: string,
+    password: string,
+    passwordConfirmation: string
+  ) =>
+    ipcRenderer.invoke(
+      'api:register',
+      name,
+      email,
+      password,
+      passwordConfirmation
+    ),
+  logout: () => ipcRenderer.invoke('api:logout'),
+  syncDevices: () => ipcRenderer.invoke('api:sync-devices'),
+})
 
 contextBridge.exposeInMainWorld('dbAPI', {
   getDevices: () => ipcRenderer.invoke('db:get-devices'),
@@ -78,4 +120,13 @@ contextBridge.exposeInMainWorld('dbAPI', {
 contextBridge.exposeInMainWorld('qrAPI', {
   savePng: (dataUrl: string, defaultName: string) =>
     ipcRenderer.invoke('qr:save-png', dataUrl, defaultName),
+})
+
+contextBridge.exposeInMainWorld('faultAPI', {
+  getFaults: (status?: FaultStatus) =>
+    ipcRenderer.invoke('api:get-faults', status),
+  getDeviceFaults: (uuid: string) =>
+    ipcRenderer.invoke('api:get-device-faults', uuid),
+  updateFaultStatus: (id: number, status: FaultStatus) =>
+    ipcRenderer.invoke('api:update-fault-status', id, status),
 })
