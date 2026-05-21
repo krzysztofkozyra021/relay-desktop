@@ -20,8 +20,6 @@ makeAppWithSingleInstanceLock(async () => {
   await app.whenReady()
   const window = await makeAppSetup(MainWindow)
 
-  // ── Auth ──────────────────────────────────────────────────────────────────
-
   ipcMain.handle('api:login', (_, email: string, password: string) =>
     apiClient.login(email, password)
   )
@@ -43,8 +41,6 @@ makeAppWithSingleInstanceLock(async () => {
     const providerToken = await startGoogleOAuth()
     return apiClient.loginWithGoogle(providerToken)
   })
-
-  // ── Sync: API → local SQLite ──────────────────────────────────────────────
 
   ipcMain.handle('api:sync-devices', async () => {
     const apiDevices = await apiClient.getDevices()
@@ -69,8 +65,6 @@ makeAppWithSingleInstanceLock(async () => {
     deviceRepo.deleteAllExcept(apiDevices.map(d => d.uuid))
     return deviceRepo.findAll()
   })
-
-  // ── Devices (local SQLite + fire-and-forget API sync) ─────────────────────
 
   ipcMain.handle('db:get-devices', () => deviceRepo.findAll())
 
@@ -153,8 +147,6 @@ makeAppWithSingleInstanceLock(async () => {
       .catch(e => console.warn('API deleteDevice failed:', e))
   })
 
-  // ── Events ────────────────────────────────────────────────────────────────
-
   ipcMain.handle('db:get-events', (_, device_uuid: string) =>
     eventRepo.findByDevice(device_uuid)
   )
@@ -162,8 +154,6 @@ makeAppWithSingleInstanceLock(async () => {
   ipcMain.handle('db:add-event', (_, data: AddEventInput) =>
     eventRepo.create(data)
   )
-
-  // ── Faults ───────────────────────────────────────────────────────────────
 
   ipcMain.handle('api:get-faults', (_, status?: string) =>
     apiClient.getFaults(
@@ -181,8 +171,6 @@ makeAppWithSingleInstanceLock(async () => {
       status as import('shared/types').FaultStatus
     )
   )
-
-  // ── QR export ─────────────────────────────────────────────────────────────
 
   ipcMain.handle(
     'qr:save-png',

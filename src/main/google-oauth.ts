@@ -18,7 +18,7 @@ async function exchangeCodeForToken(
   code: string,
   clientId: string,
   clientSecret: string,
-  redirectUri: string,
+  redirectUri: string
 ): Promise<string> {
   const body = new URLSearchParams({
     code,
@@ -52,7 +52,9 @@ export function startGoogleOAuth(): Promise<string> {
 
   if (!clientId || !clientSecret || !redirectUri) {
     return Promise.reject(
-      new Error('Google OAuth nie jest skonfigurowane. Ustaw GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET i GOOGLE_REDIRECT_URI w .env'),
+      new Error(
+        'Google OAuth nie jest skonfigurowane. Ustaw GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET i GOOGLE_REDIRECT_URI w .env'
+      )
     )
   }
 
@@ -75,7 +77,7 @@ export function startGoogleOAuth(): Promise<string> {
     const handleRedirect = async (url: string) => {
       if (!url.startsWith(redirectUri)) return
       if (redirectHandled) return
-      redirectHandled = true  // set BEFORE popup.close() so 'closed' event sees it
+      redirectHandled = true
 
       popup.close()
 
@@ -91,7 +93,12 @@ export function startGoogleOAuth(): Promise<string> {
           reject(new Error('Brak kodu autoryzacyjnego od Google.'))
           return
         }
-        const accessToken = await exchangeCodeForToken(code, clientId, clientSecret, redirectUri)
+        const accessToken = await exchangeCodeForToken(
+          code,
+          clientId,
+          clientSecret,
+          redirectUri
+        )
         resolve(accessToken)
       } catch (err) {
         reject(err)

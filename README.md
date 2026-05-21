@@ -67,6 +67,29 @@ The project includes a `Makefile` to simplify typical development tasks using `p
 | `make lint`      | Check code style and errors using Biome           |
 | `make fix`       | Automatically fix code style errors               |
 | `make typecheck` | Run the TypeScript compiler to check for errors   |
+| `make test`      | Run the Vitest suite once                         |
+| `make test:watch`| Run the Vitest suite in watch mode                |
 | `make clean`     | Remove development and build artifacts            |
 | `make release`   | Create a production release and publish it        |
 | `make help`      | Display the list of available commands            |
+
+## Running Tests
+
+Unit tests live in the `tests/` directory and are powered by [Vitest](https://vitest.dev/).
+
+```bash
+make test            # one-shot run
+make test:watch      # watch mode
+
+# or directly via pnpm
+pnpm test            # one-shot run
+pnpm test:watch      # watch mode
+pnpm test:ui         # interactive Vitest UI in the browser
+```
+
+> **Note:** the tests use `better-sqlite3` against the **system Node**, while `make dev`/`make build` need it compiled against **Electron's Node**. If the test runner reports a `NODE_MODULE_VERSION` mismatch, rebuild the native binding:
+>
+> ```bash
+> npm rebuild better-sqlite3 --update-binary   # for tests (system Node)
+> make install                                 # switch back to Electron's Node
+> ```

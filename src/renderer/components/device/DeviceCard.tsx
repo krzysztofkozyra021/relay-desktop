@@ -21,7 +21,6 @@ export function DeviceCard({ device, onSelect }: Props) {
         type="button"
       />
 
-      {/* pointer-events-none — kliknięcie "przelatuje" do overlay buttona powyżej */}
       <div className="shrink-0 rounded-lg overflow-hidden border border-border pointer-events-none">
         <QRPreview deviceId={device.uuid} size={80} />
       </div>
@@ -35,7 +34,6 @@ export function DeviceCard({ device, onSelect }: Props) {
             <p className="text-xs text-muted-foreground mt-0.5">{meta}</p>
           </div>
 
-          {/* pointer-events-auto — przywraca klikalność tylko dla tego przycisku */}
           <button
             className="relative z-10 shrink-0 flex items-center gap-1.5 px-3 py-1.5 bg-secondary hover:bg-border text-text-secondary hover:text-foreground text-xs font-medium rounded-lg border border-border transition-colors opacity-0 group-hover:opacity-100 cursor-pointer pointer-events-auto"
             onClick={() => exportDeviceQrAsPng(device.uuid)}

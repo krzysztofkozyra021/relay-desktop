@@ -16,6 +16,8 @@ help:
 	@echo "  lint       Lint the code"
 	@echo "  fix        Fix code style errors"
 	@echo "  typecheck  Run TypeScript compiler check"
+	@echo "  test       Run the test suite once"
+	@echo "  test:watch Run the test suite in watch mode"
 	@echo "  clean      Remove temporary build artifacts"
 	@echo "  release    Create a production release"
 
@@ -42,6 +44,14 @@ fix:
 .PHONY: typecheck
 typecheck:
 	$(PNPM) run typecheck
+
+.PHONY: test
+test:
+	$(PNPM) run test
+
+.PHONY: test\:watch
+test\:watch:
+	$(PNPM) run test:watch
 
 .PHONY: clean
 clean:

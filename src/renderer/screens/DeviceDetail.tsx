@@ -175,7 +175,6 @@ export function DeviceDetail({
     <div className="relative h-full">
       <div className="h-full overflow-auto p-6 pb-28">
         <div className="max-w-2xl mx-auto space-y-6">
-          {/* Device header */}
           <div className="print-area flex items-start gap-5">
             <div className="shrink-0 rounded-xl overflow-hidden border border-border">
               <QRPreview deviceId={device.uuid} size={104} />
@@ -268,7 +267,6 @@ export function DeviceDetail({
             </div>
           </div>
 
-          {/* Delete confirmation */}
           {deleteConfirm && (
             <div className="flex items-center justify-between gap-4 px-4 py-3.5 bg-danger/5 border border-danger/30 rounded-xl">
               <p className="text-sm text-foreground">
@@ -295,7 +293,6 @@ export function DeviceDetail({
             </div>
           )}
 
-          {/* Szczegóły */}
           <section>
             <h3 className="text-sm font-semibold text-foreground mb-3">
               Szczegóły
@@ -385,7 +382,6 @@ export function DeviceDetail({
             </div>
           </section>
 
-          {/* Historia zdarzeń */}
           <section>
             <h3 className="text-sm font-semibold text-foreground mb-4">
               Historia zdarzeń
@@ -406,7 +402,6 @@ export function DeviceDetail({
         </div>
       </div>
 
-      {/* FAB */}
       {!showFaultForm && mode === 'view' && (
         <div className="absolute bottom-6 right-6">
           <button

@@ -88,7 +88,6 @@ export function MainScreen({
     runSync()
   }, [])
 
-  // Keep the "X minut temu" label fresh
   useEffect(() => {
     const update = () =>
       setSyncLabel(lastSynced ? formatLastSync(lastSynced) : '')
