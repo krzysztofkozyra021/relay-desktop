@@ -1,4 +1,3 @@
-
 import { resolve, basename } from 'node:path'
 import { writeFile } from 'node:fs/promises'
 

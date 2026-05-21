@@ -67,6 +67,7 @@
       ".",
       "src/**/*",
       "!src/lib/electron-app/extensions/**/*",
+      "!src/lib/electron-app/release/**/*",
       "!node_modules/**/*",
       "!dist/**/*"
     ]

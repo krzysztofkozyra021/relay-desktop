@@ -1,6 +1,6 @@
 export const TEST_USER = {
-  email: 'test@relay.app',
-  password: 'test1234',
+  email: 'installer@example.com',
+  password: 'password',
 }
 
 export const TEST_DEVICE_DEFAULTS = {

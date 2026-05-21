@@ -1,27 +1,55 @@
-import { useEffect, useState } from 'react'
-import { ArrowLeft, FlaskConical, Plus } from 'lucide-react'
-import type { Device } from 'shared/types'
+import { useEffect, useRef, useState } from 'react'
+import { ArrowLeft, FlaskConical, Plus, RefreshCw } from 'lucide-react'
+import type { ApiUser, Device } from 'shared/types'
 import { Sidebar } from 'renderer/components/layout/Sidebar'
 import { DeviceForm } from '../components/DeviceForm'
 import { DeviceList } from '../components/device/DeviceList'
 import { DeviceDetail } from './DeviceDetail'
+import { FaultsScreen } from './FaultsScreen'
 import { seedTestDevices } from '../debug/testData'
 
 const IS_TEST = import.meta.env.VITE_APP_DEBUG === 'test'
+const LAST_SYNC_KEY = 'relay:lastSynced'
 
-type Mode = 'list' | 'add' | 'detail'
+type Mode = 'list' | 'add' | 'detail' | 'faults'
+
+function formatLastSync(date: Date): string {
+  const diffMs = Date.now() - date.getTime()
+  const diffMin = Math.floor(diffMs / 60_000)
+  if (diffMin < 1) return 'przed chwilą'
+  if (diffMin === 1) return '1 minutę temu'
+  if (diffMin < 60) return `${diffMin} minut temu`
+  const diffH = Math.floor(diffMin / 60)
+  if (diffH === 1) return '1 godzinę temu'
+  if (diffH < 24) return `${diffH} godzin temu`
+  return date.toLocaleString('pl-PL', {
+    day: '2-digit',
+    month: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
 
 export function MainScreen({
   user,
   onLogout,
 }: {
-  user: string
+  user: ApiUser
   onLogout: () => void
 }) {
   const [mode, setMode] = useState<Mode>('list')
   const [devices, setDevices] = useState<Device[]>([])
   const [selectedUuid, setSelectedUuid] = useState<string | null>(null)
   const [seeding, setSeeding] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [syncError, setSyncError] = useState<string | null>(null)
+  const [activeFaultCount, setActiveFaultCount] = useState(0)
+  const [lastSynced, setLastSynced] = useState<Date | null>(() => {
+    const stored = localStorage.getItem(LAST_SYNC_KEY)
+    return stored ? new Date(stored) : null
+  })
+  const [syncLabel, setSyncLabel] = useState('')
+  const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const fetchDevices = async () => {
     try {
@@ -32,9 +60,44 @@ export function MainScreen({
     }
   }
 
+  const runSync = async () => {
+    if (syncing) return
+    setSyncing(true)
+    setSyncError(null)
+    try {
+      const [synced, faults] = await Promise.all([
+        window.authAPI.syncDevices(),
+        window.faultAPI.getFaults(),
+      ])
+      setDevices(synced)
+      setActiveFaultCount(faults.filter(f => f.status !== 'resolved').length)
+      const now = new Date()
+      localStorage.setItem(LAST_SYNC_KEY, now.toISOString())
+      setLastSynced(now)
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : 'Synchronizacja nie powiodła się.'
+      setSyncError(msg)
+      await fetchDevices()
+    } finally {
+      setSyncing(false)
+    }
+  }
+
   useEffect(() => {
-    fetchDevices()
+    runSync()
   }, [])
+
+  // Keep the "X minut temu" label fresh
+  useEffect(() => {
+    const update = () =>
+      setSyncLabel(lastSynced ? formatLastSync(lastSynced) : '')
+    update()
+    tickRef.current = setInterval(update, 30_000)
+    return () => {
+      if (tickRef.current) clearInterval(tickRef.current)
+    }
+  }, [lastSynced])
 
   const openDetail = (uuid: string) => {
     setSelectedUuid(uuid)
@@ -44,6 +107,15 @@ export function MainScreen({
   const backToList = () => {
     setMode('list')
     setSelectedUuid(null)
+  }
+
+  const handleNavigate = (id: string) => {
+    if (id === 'faults') {
+      setMode('faults')
+      setSelectedUuid(null)
+    } else {
+      backToList()
+    }
   }
 
   const handleSeed = async () => {
@@ -58,21 +130,26 @@ export function MainScreen({
       ? 'Nowe urządzenie'
       : mode === 'detail'
         ? 'Profil urządzenia'
-        : 'Urządzenia'
+        : mode === 'faults'
+          ? 'Usterki'
+          : 'Urządzenia'
 
   const headerSubtitle =
     mode === 'add'
       ? 'Uzupełnij dane i wygeneruj kod QR'
       : mode === 'detail'
         ? (devices.find(d => d.uuid === selectedUuid)?.name ?? '…')
-        : `${devices.length} zarejestrowanych urządzeń`
+        : mode === 'faults'
+          ? 'Aktywne zgłoszenia usterek'
+          : `${devices.length} zarejestrowanych urządzeń`
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       <Sidebar
-        active="devices"
+        active={mode === 'faults' ? 'faults' : 'devices'}
+        faultCount={activeFaultCount}
         onLogout={onLogout}
-        onNavigate={backToList}
+        onNavigate={handleNavigate}
         user={user}
       />
 
@@ -96,6 +173,44 @@ export function MainScreen({
                 <FlaskConical size={14} />
                 {seeding ? 'Seedowanie…' : 'Seed DB'}
               </button>
+            )}
+            {(mode === 'list' || mode === 'faults') && (
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 text-xs">
+                  {syncing ? (
+                    <span className="flex items-center gap-1 text-muted-foreground">
+                      <RefreshCw className="animate-spin" size={11} />
+                      Synchronizacja…
+                    </span>
+                  ) : syncError ? (
+                    <span className="text-danger" title={syncError}>
+                      Błąd synchronizacji
+                    </span>
+                  ) : (
+                    syncLabel && (
+                      <span
+                        className="text-muted-foreground"
+                        title={lastSynced?.toLocaleString('pl-PL')}
+                      >
+                        Zsynchronizowano: {syncLabel}
+                      </span>
+                    )
+                  )}
+                </div>
+                <button
+                  className="flex items-center gap-1.5 px-3 py-2 bg-secondary hover:bg-border text-foreground text-xs font-medium rounded-lg border border-border transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-default"
+                  disabled={syncing}
+                  onClick={runSync}
+                  title="Synchronizuj z API"
+                  type="button"
+                >
+                  <RefreshCw
+                    className={syncing ? 'animate-spin' : ''}
+                    size={13}
+                  />
+                  Synchronizuj
+                </button>
+              </div>
             )}
             {mode === 'list' && (
               <button
@@ -121,7 +236,9 @@ export function MainScreen({
         </header>
 
         <main className="flex-1 overflow-hidden">
-          {mode === 'detail' && selectedUuid ? (
+          {mode === 'faults' ? (
+            <FaultsScreen onFaultCountChange={setActiveFaultCount} />
+          ) : mode === 'detail' && selectedUuid ? (
             <DeviceDetail
               deviceUuid={selectedUuid}
               onBack={backToList}
@@ -129,7 +246,7 @@ export function MainScreen({
                 fetchDevices()
                 backToList()
               }}
-              user={user}
+              user={user.email}
             />
           ) : mode === 'add' ? (
             <div className="h-full overflow-auto p-6">

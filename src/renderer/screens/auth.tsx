@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import { Monitor } from 'lucide-react'
 import { cn } from 'renderer/lib/utils'
+import type { ApiUser } from 'shared/types'
 import { TEST_USER } from '../debug/testData'
 
 const IS_TEST = import.meta.env.VITE_APP_DEBUG === 'test'
 
 type Tab = 'login' | 'register'
 
-export function AuthScreen({ onAuth }: { onAuth: (email: string) => void }) {
+export function AuthScreen({ onAuth }: { onAuth: (user: ApiUser) => void }) {
   const [tab, setTab] = useState<Tab>('login')
+  const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -23,7 +25,7 @@ export function AuthScreen({ onAuth }: { onAuth: (email: string) => void }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
-    if (!email || !password) {
+    if (!email || !password || (tab === 'register' && !name)) {
       setError('Wypełnij wszystkie wymagane pola.')
       return
     }
@@ -32,9 +34,28 @@ export function AuthScreen({ onAuth }: { onAuth: (email: string) => void }) {
       return
     }
     setLoading(true)
-    await new Promise(r => setTimeout(r, 500))
-    setLoading(false)
-    onAuth(email)
+    try {
+      const result =
+        tab === 'login'
+          ? await window.authAPI.login(email, password)
+          : await window.authAPI.register(name, email, password, confirm)
+
+      if (result.ok) {
+        onAuth(result.user)
+        return
+      }
+      if ('requires2fa' in result && result.requires2fa) {
+        setError(
+          'Twoje konto wymaga weryfikacji dwuskładnikowej. Skontaktuj się z administratorem.'
+        )
+        return
+      }
+      setError(result.error)
+    } catch {
+      setError('Błąd połączenia z serwerem. Sprawdź czy API jest dostępne.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -117,6 +138,15 @@ export function AuthScreen({ onAuth }: { onAuth: (email: string) => void }) {
             </div>
 
             <form className="space-y-4" onSubmit={handleSubmit}>
+              {tab === 'register' && (
+                <AuthField
+                  label="Imię i nazwisko *"
+                  onChange={setName}
+                  placeholder="Jan Kowalski"
+                  type="text"
+                  value={name}
+                />
+              )}
               <AuthField
                 label="Adres e-mail"
                 onChange={setEmail}

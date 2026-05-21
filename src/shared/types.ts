@@ -71,3 +71,40 @@ export type AddEventInput = {
   description?: string
   user?: string
 }
+
+export interface ApiUser {
+  id: number
+  name: string
+  email: string
+  is_admin: boolean
+  is_installer: boolean
+  is_service: boolean
+}
+
+export type FaultStatus = 'pending' | 'in_progress' | 'resolved'
+
+export interface FaultReport {
+  id: number
+  device_uuid: string
+  title: string
+  description: string | null
+  reported_by: string | null
+  contact: string | null
+  status: FaultStatus
+  resolved_at: string | null
+  created_at: string
+  updated_at: string
+  device?: {
+    uuid: string
+    name: string
+    type: string
+    model: string | null
+    brand: string | null
+    location: string
+  }
+}
+
+export type ApiLoginResult =
+  | { ok: true; user: ApiUser; token: string }
+  | { ok: false; requires2fa: true; intermediateToken: string }
+  | { ok: false; requires2fa?: false; error: string }
