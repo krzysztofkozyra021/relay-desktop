@@ -2,10 +2,13 @@ import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import { codeInspectorPlugin } from 'code-inspector-plugin'
 import { resolve, normalize, dirname } from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
+import { config as loadDotenv } from 'dotenv'
 
 import injectProcessEnvPlugin from 'rollup-plugin-inject-process-env'
 import tsconfigPathsPlugin from 'vite-tsconfig-paths'
 import reactPlugin from '@vitejs/plugin-react'
+
+loadDotenv()
 
 import { settings } from './src/lib/electron-router-dom'
 import { main, resources } from './package.json'
@@ -21,6 +24,13 @@ export default defineConfig({
   main: {
     mode: 'es2022',
     plugins: [tsconfigPaths, externalizeDepsPlugin()],
+
+    define: {
+      'process.env.RELAY_API_URL': JSON.stringify(process.env.RELAY_API_URL ?? 'http://localhost:50851'),
+      'process.env.GOOGLE_CLIENT_ID': JSON.stringify(process.env.GOOGLE_CLIENT_ID ?? ''),
+      'process.env.GOOGLE_CLIENT_SECRET': JSON.stringify(process.env.GOOGLE_CLIENT_SECRET ?? ''),
+      'process.env.GOOGLE_REDIRECT_URI': JSON.stringify(process.env.GOOGLE_REDIRECT_URI ?? ''),
+    },
 
     build: {
       rollupOptions: {

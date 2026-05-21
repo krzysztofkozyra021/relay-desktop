@@ -4,6 +4,7 @@ import db from './database'
 import { DeviceRepository } from './repositories/DeviceRepository'
 import { EventRepository } from './repositories/EventRepository'
 import { apiClient } from './api/client'
+import { startGoogleOAuth } from './google-oauth'
 import { makeAppWithSingleInstanceLock } from 'lib/electron-app/factories/app/instance'
 import { makeAppSetup } from 'lib/electron-app/factories/app/setup'
 import { loadReactDevtools } from 'lib/electron-app/utils'
@@ -37,6 +38,11 @@ makeAppWithSingleInstanceLock(async () => {
   )
 
   ipcMain.handle('api:logout', () => apiClient.logout())
+
+  ipcMain.handle('api:login-google', async () => {
+    const providerToken = await startGoogleOAuth()
+    return apiClient.loginWithGoogle(providerToken)
+  })
 
   // ── Sync: API → local SQLite ──────────────────────────────────────────────
 
