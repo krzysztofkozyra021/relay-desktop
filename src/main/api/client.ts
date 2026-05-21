@@ -103,6 +103,27 @@ class RelayApiClient {
     }
   }
 
+  async loginWithGoogle(providerToken: string): Promise<ApiLoginResult> {
+    const { ok, data } = await this.req<RawBody>('POST', '/api/auth/google', {
+      provider_token: providerToken,
+    })
+    if (ok && data.access_token && data.user) {
+      this.token = data.access_token
+      return { ok: true, user: data.user, token: data.access_token }
+    }
+    if (data.requires_2fa && data.intermediate_token) {
+      return {
+        ok: false,
+        requires2fa: true,
+        intermediateToken: data.intermediate_token,
+      }
+    }
+    return {
+      ok: false,
+      error: data.message ?? 'Logowanie przez Google nie powiodło się.',
+    }
+  }
+
   async logout(): Promise<void> {
     if (!this.token) return
     await this.req('POST', '/api/logout').catch(() => {})
