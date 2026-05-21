@@ -26,7 +26,6 @@ db.exec(`
   )
 `)
 
-// Migration: add status column to existing databases
 const deviceCols = (
   db.prepare('PRAGMA table_info(devices)').all() as Array<{ name: string }>
 ).map(c => c.name)

@@ -24,7 +24,9 @@
   },
   "include": [
     "./src",
+    "./tests",
     "electron.vite.config.*",
+    "vitest.config.ts",
     "electron-builder.ts",
     "index.d.ts"
   ],
