@@ -80,6 +80,7 @@ export function DeviceDetail({
   const [showFaultForm, setShowFaultForm] = useState(false)
   const [deleteConfirm, setDeleteConfirm] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [updatingFault, setUpdatingFault] = useState<{ id: number; status: FaultStatus } | null>(null)
 
   const load = async () => {
     const [deviceData, eventsList, faultList] = await Promise.all([
@@ -128,12 +129,6 @@ export function DeviceDetail({
     setSaving(true)
     try {
       await window.dbAPI.updateDevice(device.uuid, editData)
-      await window.dbAPI.addEvent({
-        device_uuid: device.uuid,
-        type: 'edit',
-        title: 'Edytowano dane urządzenia',
-        user: user.email,
-      })
       await load()
       setMode('view')
       setEditData(null)
@@ -168,10 +163,15 @@ export function DeviceDetail({
   }
 
   const handleFaultStatusChange = async (id: number, status: FaultStatus) => {
-    const updated = await window.faultAPI.updateFaultStatus(id, status)
-    if (updated) {
-      setFaults(prev => prev.map(f => (f.id === id ? updated : f)))
-      onSyncNeeded?.()
+    setUpdatingFault({ id, status })
+    try {
+      const updated = await window.faultAPI.updateFaultStatus(id, status)
+      if (updated) {
+        setFaults(prev => prev.map(f => (f.id === id ? updated : f)))
+        onSyncNeeded?.()
+      }
+    } finally {
+      setUpdatingFault(null)
     }
   }
 
@@ -408,6 +408,7 @@ export function DeviceDetail({
               events={events}
               faults={faults}
               onFaultStatusChange={handleFaultStatusChange}
+              updatingFault={updatingFault}
             />
           </section>
 

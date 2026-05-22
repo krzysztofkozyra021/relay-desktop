@@ -2,9 +2,9 @@ import { cn } from 'renderer/lib/utils'
 import type { FaultStatus } from 'shared/types'
 
 const FAULT_STATUS_LABELS: Record<FaultStatus, string> = {
-  pending: 'Oczekuje',
+  pending: 'Nowe',
   in_progress: 'W trakcie',
-  resolved: 'Rozwiązana',
+  resolved: 'Rozwiązane',
 }
 
 const FAULT_STATUS_COLORS: Record<FaultStatus, string> = {

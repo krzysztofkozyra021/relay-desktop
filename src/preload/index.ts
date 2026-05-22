@@ -24,6 +24,7 @@ declare global {
       logout: () => Promise<void>
       syncDevices: () => Promise<Device[]>
       loginWithGoogle: () => Promise<ApiLoginResult>
+      getSession: () => Promise<ApiUser | null>
     }
     dbAPI: {
       getDevices: () => Promise<Device[]>
@@ -88,6 +89,7 @@ contextBridge.exposeInMainWorld('authAPI', {
   logout: () => ipcRenderer.invoke('api:logout'),
   syncDevices: () => ipcRenderer.invoke('api:sync-devices'),
   loginWithGoogle: () => ipcRenderer.invoke('api:login-google'),
+  getSession: () => ipcRenderer.invoke('api:get-session'),
 })
 
 contextBridge.exposeInMainWorld('dbAPI', {
