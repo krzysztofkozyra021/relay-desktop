@@ -104,6 +104,13 @@ export interface FaultReport {
   }
 }
 
+export type CreateFaultInput = {
+  title: string
+  description?: string
+  reported_by?: string
+  contact?: string
+}
+
 export type ApiLoginResult =
   | { ok: true; user: ApiUser; token: string }
   | { ok: false; requires2fa: true; intermediateToken: string }

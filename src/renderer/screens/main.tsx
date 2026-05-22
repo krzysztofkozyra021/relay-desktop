@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, FlaskConical, Plus, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Plus, RefreshCw } from 'lucide-react'
 import type { ApiUser, Device } from 'shared/types'
+import { canManageFaults } from 'shared/utils'
 import { Sidebar } from 'renderer/components/layout/Sidebar'
 import { DeviceForm } from '../components/DeviceForm'
 import { DeviceList } from '../components/device/DeviceList'
 import { DeviceDetail } from './DeviceDetail'
 import { FaultsScreen } from './FaultsScreen'
-import { seedTestDevices } from '../debug/testData'
 
-const IS_TEST = import.meta.env.VITE_APP_DEBUG === 'test'
 const LAST_SYNC_KEY = 'relay:lastSynced'
 
 type Mode = 'list' | 'add' | 'detail' | 'faults'
@@ -37,10 +36,10 @@ export function MainScreen({
   user: ApiUser
   onLogout: () => void
 }) {
+  const canManage = canManageFaults(user)
   const [mode, setMode] = useState<Mode>('list')
   const [devices, setDevices] = useState<Device[]>([])
   const [selectedUuid, setSelectedUuid] = useState<string | null>(null)
-  const [seeding, setSeeding] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [syncError, setSyncError] = useState<string | null>(null)
   const [activeFaultCount, setActiveFaultCount] = useState(0)
@@ -55,8 +54,8 @@ export function MainScreen({
     try {
       const fetched = await window.dbAPI.getDevices()
       setDevices(fetched)
-    } catch (e) {
-      console.error(e)
+    } catch (error) {
+      console.error(error)
     }
   }
 
@@ -65,18 +64,24 @@ export function MainScreen({
     setSyncing(true)
     setSyncError(null)
     try {
-      const [synced, faults] = await Promise.all([
-        window.authAPI.syncDevices(),
-        window.faultAPI.getFaults(),
-      ])
+      const synced = await window.authAPI.syncDevices()
       setDevices(synced)
-      setActiveFaultCount(faults.filter(f => f.status !== 'resolved').length)
+      if (canManage) {
+        const faults = await window.faultAPI.getFaults()
+        setActiveFaultCount(
+          faults.filter(fault => fault.status !== 'resolved').length
+        )
+      } else {
+        setActiveFaultCount(0)
+      }
       const now = new Date()
       localStorage.setItem(LAST_SYNC_KEY, now.toISOString())
       setLastSynced(now)
-    } catch (err) {
+    } catch (error) {
       const msg =
-        err instanceof Error ? err.message : 'Synchronizacja nie powiodła się.'
+        error instanceof Error
+          ? error.message
+          : 'Synchronizacja nie powiodła się.'
       setSyncError(msg)
       await fetchDevices()
     } finally {
@@ -86,6 +91,18 @@ export function MainScreen({
 
   useEffect(() => {
     runSync()
+  }, [])
+
+  const runSyncRef = useRef(runSync)
+  useEffect(() => {
+    runSyncRef.current = runSync
+  })
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      runSyncRef.current()
+    }, 30000)
+    return () => clearInterval(interval)
   }, [])
 
   useEffect(() => {
@@ -110,18 +127,12 @@ export function MainScreen({
 
   const handleNavigate = (id: string) => {
     if (id === 'faults') {
+      if (!canManage) return
       setMode('faults')
       setSelectedUuid(null)
     } else {
       backToList()
     }
-  }
-
-  const handleSeed = async () => {
-    setSeeding(true)
-    await seedTestDevices()
-    await fetchDevices()
-    setSeeding(false)
   }
 
   const headerTitle =
@@ -137,7 +148,7 @@ export function MainScreen({
     mode === 'add'
       ? 'Uzupełnij dane i wygeneruj kod QR'
       : mode === 'detail'
-        ? (devices.find(d => d.uuid === selectedUuid)?.name ?? '…')
+        ? (devices.find(device => device.uuid === selectedUuid)?.name ?? '…')
         : mode === 'faults'
           ? 'Aktywne zgłoszenia usterek'
           : `${devices.length} zarejestrowanych urządzeń`
@@ -162,17 +173,6 @@ export function MainScreen({
           </div>
 
           <div className="flex items-center gap-2">
-            {IS_TEST && mode === 'list' && (
-              <button
-                className="flex items-center gap-1.5 px-3 py-2 bg-warning/10 hover:bg-warning/20 text-warning text-xs font-semibold rounded-lg border border-warning/30 transition-colors cursor-pointer"
-                disabled={seeding}
-                onClick={handleSeed}
-                type="button"
-              >
-                <FlaskConical size={14} />
-                {seeding ? 'Seedowanie…' : 'Seed DB'}
-              </button>
-            )}
             {(mode === 'list' || mode === 'faults') && (
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5 text-xs">
@@ -236,7 +236,10 @@ export function MainScreen({
 
         <main className="flex-1 overflow-hidden">
           {mode === 'faults' ? (
-            <FaultsScreen onFaultCountChange={setActiveFaultCount} />
+            <FaultsScreen
+              canManage={canManage}
+              onFaultCountChange={setActiveFaultCount}
+            />
           ) : mode === 'detail' && selectedUuid ? (
             <DeviceDetail
               deviceUuid={selectedUuid}
@@ -245,7 +248,8 @@ export function MainScreen({
                 fetchDevices()
                 backToList()
               }}
-              user={user.email}
+              onSyncNeeded={runSync}
+              user={user}
             />
           ) : mode === 'add' ? (
             <div className="h-full overflow-auto p-6">

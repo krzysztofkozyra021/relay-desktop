@@ -1,9 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { ArrowLeft, Download, Printer } from 'lucide-react'
 import { QRPreview, exportDeviceQrAsPng } from './ui/QRPreview'
-import { TEST_DEVICE_DEFAULTS } from '../debug/testData'
-
-const IS_TEST = import.meta.env.VITE_APP_DEBUG === 'test'
 
 type FormData = {
   name: string
@@ -87,21 +84,6 @@ export function DeviceForm({
 
   return (
     <div className="max-w-2xl space-y-5">
-      {IS_TEST && (
-        <div className="flex items-center justify-between gap-3 px-4 py-3 bg-warning/10 border border-warning/40 rounded-xl">
-          <span className="text-xs font-semibold text-warning">
-            Tryb testowy
-          </span>
-          <button
-            className="px-3 py-1.5 bg-warning hover:bg-amber-600 text-white text-xs font-semibold rounded-lg transition-colors cursor-pointer"
-            onClick={() => setForm({ ...TEST_DEVICE_DEFAULTS })}
-            type="button"
-          >
-            Wypełnij danymi testowymi
-          </button>
-        </div>
-      )}
-
       <form className="space-y-4" onSubmit={submit}>
         <FormSection title="Podstawowe informacje">
           <div className="grid grid-cols-2 gap-4">

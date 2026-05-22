@@ -2,19 +2,28 @@ import { useState } from 'react'
 import { AlertTriangle, X } from 'lucide-react'
 
 type Props = {
-  onSubmit: (description: string) => Promise<void>
+  onSubmit: (input: { title: string; description: string }) => Promise<boolean>
   onClose: () => void
 }
 
 export function FaultReportForm({ onSubmit, onClose }: Props) {
+  const [title, setTitle] = useState('')
   const [desc, setDesc] = useState('')
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async () => {
-    if (!desc.trim()) return
+    if (!title.trim()) return
     setSubmitting(true)
-    await onSubmit(desc.trim())
+    setError(null)
+    const ok = await onSubmit({
+      title: title.trim(),
+      description: desc.trim(),
+    })
     setSubmitting(false)
+    if (!ok) {
+      setError('Nie udało się zgłosić usterki. Spróbuj ponownie.')
+    }
   }
 
   return (
@@ -32,9 +41,24 @@ export function FaultReportForm({ onSubmit, onClose }: Props) {
 
       <label
         className="block text-sm font-medium text-text-secondary mb-1.5"
+        htmlFor="fault-title"
+      >
+        Tytuł
+      </label>
+      <input
+        className="w-full px-3.5 py-2.5 border border-border rounded-xl text-sm text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-warning/30 focus:border-warning transition-colors placeholder:text-muted-foreground mb-4"
+        id="fault-title"
+        onChange={e => setTitle(e.target.value)}
+        placeholder="Krótki tytuł, np. „Brak zasilania”…"
+        type="text"
+        value={title}
+      />
+
+      <label
+        className="block text-sm font-medium text-text-secondary mb-1.5"
         htmlFor="fault-desc"
       >
-        Opis usterki
+        Opis usterki (opcjonalny)
       </label>
       <textarea
         className="w-full px-3.5 py-2.5 border border-border rounded-xl text-sm text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-warning/30 focus:border-warning transition-colors resize-none placeholder:text-muted-foreground"
@@ -44,6 +68,8 @@ export function FaultReportForm({ onSubmit, onClose }: Props) {
         rows={3}
         value={desc}
       />
+
+      {error && <p className="text-sm text-danger mt-3">{error}</p>}
 
       <div className="flex justify-end gap-2 mt-4">
         <button
@@ -55,7 +81,7 @@ export function FaultReportForm({ onSubmit, onClose }: Props) {
         </button>
         <button
           className="flex items-center gap-2 px-4 py-2 bg-warning hover:bg-amber-600 disabled:opacity-60 text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer disabled:cursor-default"
-          disabled={!desc.trim() || submitting}
+          disabled={!title.trim() || submitting}
           onClick={handleSubmit}
           type="button"
         >
