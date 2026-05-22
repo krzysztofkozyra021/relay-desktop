@@ -326,12 +326,19 @@ export function DeviceDetail({
                   new Date(a.created_at).getTime()
               )[0]
 
-              const lastUserEvent = events.find(
-                e => e.user && e.user !== 'System' && e.user !== 'Anonim'
-              )
-              const repairTech = lastUserEvent
-                ? lastUserEvent.user
-                : 'Serwisant'
+              const acceptEvent = newestInProgress
+                ? events.find(
+                    e =>
+                      e.title === 'Przyjęto usterkę' &&
+                      e.description === `FaultReport updated: ${newestInProgress.title}`
+                  )
+                : null
+
+              const repairTech = acceptEvent
+                ? acceptEvent.user
+                : events.find(
+                    e => e.user && e.user !== 'System' && e.user !== 'Anonim'
+                  )?.user ?? 'Serwisant'
 
               return (
                 <div className="no-print flex items-start gap-3.5 px-4 py-3.5 bg-warning/10 border border-warning/30 rounded-xl text-warning">
