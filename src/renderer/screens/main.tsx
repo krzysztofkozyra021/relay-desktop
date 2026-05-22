@@ -1,14 +1,13 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, FlaskConical, Plus, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Plus, RefreshCw, X } from 'lucide-react'
 import type { ApiUser, Device } from 'shared/types'
+import { canManageFaults } from 'shared/utils'
 import { Sidebar } from 'renderer/components/layout/Sidebar'
 import { DeviceForm } from '../components/DeviceForm'
 import { DeviceList } from '../components/device/DeviceList'
 import { DeviceDetail } from './DeviceDetail'
 import { FaultsScreen } from './FaultsScreen'
-import { seedTestDevices } from '../debug/testData'
 
-const IS_TEST = import.meta.env.VITE_APP_DEBUG === 'test'
 const LAST_SYNC_KEY = 'relay:lastSynced'
 
 type Mode = 'list' | 'add' | 'detail' | 'faults'
@@ -37,10 +36,10 @@ export function MainScreen({
   user: ApiUser
   onLogout: () => void
 }) {
+  const canManage = canManageFaults(user)
   const [mode, setMode] = useState<Mode>('list')
   const [devices, setDevices] = useState<Device[]>([])
   const [selectedUuid, setSelectedUuid] = useState<string | null>(null)
-  const [seeding, setSeeding] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [syncError, setSyncError] = useState<string | null>(null)
   const [activeFaultCount, setActiveFaultCount] = useState(0)
@@ -49,14 +48,15 @@ export function MainScreen({
     return stored ? new Date(stored) : null
   })
   const [syncLabel, setSyncLabel] = useState('')
+  const [showProfile, setShowProfile] = useState(false)
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const fetchDevices = async () => {
     try {
       const fetched = await window.dbAPI.getDevices()
       setDevices(fetched)
-    } catch (e) {
-      console.error(e)
+    } catch (error) {
+      console.error(error)
     }
   }
 
@@ -65,18 +65,24 @@ export function MainScreen({
     setSyncing(true)
     setSyncError(null)
     try {
-      const [synced, faults] = await Promise.all([
-        window.authAPI.syncDevices(),
-        window.faultAPI.getFaults(),
-      ])
+      const synced = await window.authAPI.syncDevices()
       setDevices(synced)
-      setActiveFaultCount(faults.filter(f => f.status !== 'resolved').length)
+      if (canManage) {
+        const faults = await window.faultAPI.getFaults()
+        setActiveFaultCount(
+          faults.filter(fault => fault.status !== 'resolved').length
+        )
+      } else {
+        setActiveFaultCount(0)
+      }
       const now = new Date()
       localStorage.setItem(LAST_SYNC_KEY, now.toISOString())
       setLastSynced(now)
-    } catch (err) {
+    } catch (error) {
       const msg =
-        err instanceof Error ? err.message : 'Synchronizacja nie powiodła się.'
+        error instanceof Error
+          ? error.message
+          : 'Synchronizacja nie powiodła się.'
       setSyncError(msg)
       await fetchDevices()
     } finally {
@@ -86,6 +92,18 @@ export function MainScreen({
 
   useEffect(() => {
     runSync()
+  }, [])
+
+  const runSyncRef = useRef(runSync)
+  useEffect(() => {
+    runSyncRef.current = runSync
+  })
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      runSyncRef.current()
+    }, 30000)
+    return () => clearInterval(interval)
   }, [])
 
   useEffect(() => {
@@ -110,18 +128,12 @@ export function MainScreen({
 
   const handleNavigate = (id: string) => {
     if (id === 'faults') {
+      if (!canManage) return
       setMode('faults')
       setSelectedUuid(null)
     } else {
       backToList()
     }
-  }
-
-  const handleSeed = async () => {
-    setSeeding(true)
-    await seedTestDevices()
-    await fetchDevices()
-    setSeeding(false)
   }
 
   const headerTitle =
@@ -137,7 +149,7 @@ export function MainScreen({
     mode === 'add'
       ? 'Uzupełnij dane i wygeneruj kod QR'
       : mode === 'detail'
-        ? (devices.find(d => d.uuid === selectedUuid)?.name ?? '…')
+        ? (devices.find(device => device.uuid === selectedUuid)?.name ?? '…')
         : mode === 'faults'
           ? 'Aktywne zgłoszenia usterek'
           : `${devices.length} zarejestrowanych urządzeń`
@@ -147,8 +159,10 @@ export function MainScreen({
       <Sidebar
         active={mode === 'faults' ? 'faults' : 'devices'}
         faultCount={activeFaultCount}
+        deviceCount={devices.length}
         onLogout={onLogout}
         onNavigate={handleNavigate}
+        onShowProfile={() => setShowProfile(true)}
         user={user}
       />
 
@@ -162,17 +176,6 @@ export function MainScreen({
           </div>
 
           <div className="flex items-center gap-2">
-            {IS_TEST && mode === 'list' && (
-              <button
-                className="flex items-center gap-1.5 px-3 py-2 bg-warning/10 hover:bg-warning/20 text-warning text-xs font-semibold rounded-lg border border-warning/30 transition-colors cursor-pointer"
-                disabled={seeding}
-                onClick={handleSeed}
-                type="button"
-              >
-                <FlaskConical size={14} />
-                {seeding ? 'Seedowanie…' : 'Seed DB'}
-              </button>
-            )}
             {(mode === 'list' || mode === 'faults') && (
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5 text-xs">
@@ -236,7 +239,10 @@ export function MainScreen({
 
         <main className="flex-1 overflow-hidden">
           {mode === 'faults' ? (
-            <FaultsScreen onFaultCountChange={setActiveFaultCount} />
+            <FaultsScreen
+              canManage={canManage}
+              onFaultCountChange={setActiveFaultCount}
+            />
           ) : mode === 'detail' && selectedUuid ? (
             <DeviceDetail
               deviceUuid={selectedUuid}
@@ -245,7 +251,8 @@ export function MainScreen({
                 fetchDevices()
                 backToList()
               }}
-              user={user.email}
+              onSyncNeeded={runSync}
+              user={user}
             />
           ) : mode === 'add' ? (
             <div className="h-full overflow-auto p-6">
@@ -258,6 +265,104 @@ export function MainScreen({
           )}
         </main>
       </div>
+
+      {showProfile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm no-print">
+          <div className="bg-card border border-border w-96 rounded-2xl shadow-xl overflow-hidden p-6 relative animate-in fade-in-50 zoom-in-95 duration-200">
+            <button
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              onClick={() => setShowProfile(false)}
+              type="button"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="flex flex-col items-center text-center mt-4">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-primary to-accent-blue flex items-center justify-center text-white text-2xl font-bold border-2 border-border shadow-md mb-4">
+                {(user.name || user.email).charAt(0).toUpperCase()}
+              </div>
+
+              <h2 className="text-lg font-bold text-foreground">
+                {user.name || 'Użytkownik'}
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">{user.email}</p>
+
+              <span className="mt-3 px-2.5 py-1 bg-primary/10 border border-primary/20 text-primary text-xs font-semibold rounded-full uppercase tracking-wider">
+                {user.is_admin
+                  ? 'Administrator'
+                  : user.is_installer
+                    ? 'Instalator'
+                    : user.is_service
+                      ? 'Serwisant'
+                      : 'Użytkownik'}
+              </span>
+            </div>
+
+            <div className="mt-6 border-t border-border pt-5 space-y-4">
+              <div>
+                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                  Uprawnienia systemowe
+                </p>
+                <div className="mt-2.5 space-y-2">
+                  <div className="flex items-center justify-between text-xs py-1 border-b border-border/40">
+                    <span className="text-foreground font-medium">
+                      Zarządzanie urządzeniami
+                    </span>
+                    <span
+                      className={
+                        user.is_admin || user.is_installer
+                          ? 'text-success font-semibold'
+                          : 'text-muted-foreground'
+                      }
+                    >
+                      {user.is_admin || user.is_installer
+                        ? 'Dozwolone'
+                        : 'Brak dostępu'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs py-1 border-b border-border/40">
+                    <span className="text-foreground font-medium">
+                      Zarządzanie usterkami
+                    </span>
+                    <span
+                      className={
+                        user.is_admin || user.is_service
+                          ? 'text-success font-semibold'
+                          : 'text-muted-foreground'
+                      }
+                    >
+                      {user.is_admin || user.is_service
+                        ? 'Dozwolone'
+                        : 'Brak dostępu'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-secondary/20 rounded-xl p-3 border border-border/30">
+                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-1">
+                  Status profilu
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Twój profil jest w trybie podglądu. Jeśli dane są niepoprawne
+                  lub wymagają aktualizacji, skontaktuj się z administratorem
+                  systemu Relay.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                className="px-4 py-2 bg-secondary hover:bg-border text-text-secondary text-sm font-semibold rounded-lg border border-border transition-colors cursor-pointer"
+                onClick={() => setShowProfile(false)}
+                type="button"
+              >
+                Zamknij podgląd
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

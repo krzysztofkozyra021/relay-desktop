@@ -1,10 +1,11 @@
 import { AlertTriangle, Monitor, LogOut, Server } from 'lucide-react'
 import { cn } from 'renderer/lib/utils'
 import type { ApiUser } from 'shared/types'
+import { canManageFaults } from 'shared/utils'
 
 type NavItem = { id: string; label: string; icon: React.ReactNode }
 
-const NAV_ITEMS: NavItem[] = [
+const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'devices', label: 'Urządzenia', icon: <Server size={17} /> },
   { id: 'faults', label: 'Usterki', icon: <AlertTriangle size={17} /> },
 ]
@@ -21,7 +22,9 @@ type Props = {
   onNavigate: (id: string) => void
   user: ApiUser
   onLogout: () => void
+  onShowProfile: () => void
   faultCount?: number
+  deviceCount?: number
 }
 
 export function Sidebar({
@@ -29,10 +32,15 @@ export function Sidebar({
   onNavigate,
   user,
   onLogout,
+  onShowProfile,
   faultCount = 0,
+  deviceCount = 0,
 }: Props) {
   const displayName = user.name || user.email
   const role = roleLabel(user)
+  const navItems = canManageFaults(user)
+    ? ALL_NAV_ITEMS
+    : ALL_NAV_ITEMS.filter(item => item.id !== 'faults')
 
   return (
     <div className="w-60 shrink-0 bg-sidebar flex flex-col h-full">
@@ -44,7 +52,7 @@ export function Sidebar({
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-0.5">
-        {NAV_ITEMS.map(item => (
+        {navItems.map(item => (
           <button
             className={cn(
               'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-left cursor-pointer',
@@ -58,6 +66,11 @@ export function Sidebar({
           >
             {item.icon}
             <span className="flex-1">{item.label}</span>
+            {item.id === 'devices' && deviceCount > 0 && (
+              <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-sidebar-accent/80 text-sidebar-foreground/80 text-[10px] font-bold flex items-center justify-center border border-sidebar-border/30">
+                {deviceCount}
+              </span>
+            )}
             {item.id === 'faults' && faultCount > 0 && (
               <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-warning text-white text-[10px] font-bold flex items-center justify-center">
                 {faultCount > 99 ? '99+' : faultCount}
@@ -67,26 +80,35 @@ export function Sidebar({
         ))}
       </nav>
 
-      <div className="px-3 py-4 border-t border-sidebar-border">
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg">
-          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold shrink-0">
+      <div className="px-3 py-4 border-t border-sidebar-border space-y-2">
+        <button
+          className="w-full flex items-center gap-3 px-3 py-2 bg-sidebar-accent/30 hover:bg-sidebar-accent/70 text-left rounded-xl transition-all cursor-pointer group"
+          onClick={onShowProfile}
+          title="Pokaż mój profil"
+          type="button"
+        >
+          <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold shrink-0 group-hover:scale-105 transition-transform">
             {displayName.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-[10px] text-sidebar-foreground/40 truncate">
               {role}
             </p>
-            <p className="text-xs text-sidebar-foreground font-medium truncate">
+            <p className="text-xs text-sidebar-foreground font-medium truncate group-hover:text-white transition-colors">
               {displayName}
             </p>
           </div>
+        </button>
+        <div className="flex items-center justify-between px-3 text-[10px] text-sidebar-foreground/30">
+          <span>Zalogowano</span>
           <button
-            className="text-sidebar-foreground/40 hover:text-sidebar-foreground transition-colors shrink-0 cursor-pointer"
+            className="flex items-center gap-1 text-sidebar-foreground/40 hover:text-danger transition-colors cursor-pointer"
             onClick={onLogout}
-            title="Wyloguj"
+            title="Wyloguj się z systemu"
             type="button"
           >
-            <LogOut size={15} />
+            <LogOut size={10} />
+            Wyloguj
           </button>
         </div>
       </div>

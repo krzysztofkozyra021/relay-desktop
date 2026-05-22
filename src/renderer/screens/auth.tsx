@@ -2,9 +2,6 @@ import { useState } from 'react'
 import { Monitor } from 'lucide-react'
 import { cn } from 'renderer/lib/utils'
 import type { ApiUser } from 'shared/types'
-import { TEST_USER } from '../debug/testData'
-
-const IS_TEST = import.meta.env.VITE_APP_DEBUG === 'test'
 
 type Tab = 'login' | 'register'
 
@@ -110,29 +107,6 @@ export function AuthScreen({ onAuth }: { onAuth: (user: ApiUser) => void }) {
 
       <div className="flex-1 flex items-center justify-center p-8 overflow-auto">
         <div className="w-full max-w-md">
-          {IS_TEST && (
-            <div className="mb-5 flex items-center justify-between gap-3 px-4 py-3 bg-warning/10 border border-warning/40 rounded-xl">
-              <div>
-                <span className="block text-xs font-semibold text-warning">
-                  Tryb testowy
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  VITE_APP_DEBUG=test
-                </span>
-              </div>
-              <button
-                className="shrink-0 px-3 py-1.5 bg-warning text-white text-xs font-semibold rounded-lg hover:bg-amber-600 transition-colors cursor-pointer"
-                onClick={() => {
-                  setEmail(TEST_USER.email)
-                  setPassword(TEST_USER.password)
-                }}
-                type="button"
-              >
-                Auto-wypełnij
-              </button>
-            </div>
-          )}
-
           <div className="bg-card rounded-2xl border border-border shadow-sm p-8">
             <h1 className="text-xl font-bold text-foreground mb-1">
               {tab === 'login' ? 'Zaloguj się do Relay' : 'Utwórz konto Relay'}

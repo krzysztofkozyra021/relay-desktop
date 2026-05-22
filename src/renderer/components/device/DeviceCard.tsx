@@ -1,4 +1,4 @@
-import { Download, MapPin } from 'lucide-react'
+import { Download, MapPin, Wrench } from 'lucide-react'
 import type { Device } from 'shared/types'
 import { QRPreview, exportDeviceQrAsPng } from '../ui/QRPreview'
 
@@ -8,12 +8,23 @@ type Props = {
 }
 
 export function DeviceCard({ device, onSelect }: Props) {
+  const isRepair = device.status === 'repair'
+  const isRetired = device.status === 'retired'
+
   const meta = [device.brand, device.model, device.type]
     .filter(Boolean)
     .join(' · ')
 
   return (
-    <div className="relative bg-card border border-border rounded-xl p-4 flex items-start gap-5 hover:shadow-sm hover:border-primary/30 transition-all group">
+    <div
+      className={`relative border rounded-xl p-4 flex items-start gap-5 hover:shadow-sm transition-all group ${
+        isRepair
+          ? 'border-warning/30 bg-warning/[0.01] hover:border-warning/50 hover:bg-warning/[0.03]'
+          : isRetired
+            ? 'border-border/50 bg-secondary/[0.03] opacity-75 hover:opacity-100 hover:border-border'
+            : 'bg-card border-border hover:border-primary/30 hover:bg-primary/[0.01]'
+      }`}
+    >
       <button
         aria-label={`Otwórz szczegóły: ${device.name}`}
         className="absolute inset-0 rounded-xl cursor-pointer"
@@ -27,10 +38,23 @@ export function DeviceCard({ device, onSelect }: Props) {
 
       <div className="flex-1 min-w-0 pointer-events-none">
         <div className="flex items-start justify-between gap-4">
-          <div className="min-w-0">
-            <h3 className="font-semibold text-foreground text-sm truncate group-hover:text-primary transition-colors">
-              {device.name}
-            </h3>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="font-semibold text-foreground text-sm truncate group-hover:text-primary transition-colors max-w-[70%]">
+                {device.name}
+              </h3>
+              {isRepair && (
+                <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 bg-warning/15 text-warning text-[9px] font-bold rounded-md uppercase tracking-wider">
+                  <Wrench size={9} />
+                  W naprawie
+                </span>
+              )}
+              {isRetired && (
+                <span className="shrink-0 inline-flex items-center gap-1 px-1.5 py-0.5 bg-danger/10 text-danger text-[9px] font-bold rounded-md uppercase tracking-wider">
+                  Wycofane
+                </span>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground mt-0.5">{meta}</p>
           </div>
 

@@ -1,5 +1,6 @@
 import { app, ipcMain, dialog } from 'electron'
-import { writeFile } from 'node:fs/promises'
+import { writeFile, readFile, rm } from 'node:fs/promises'
+import path from 'node:path'
 import db from './database'
 import { DeviceRepository } from './repositories/DeviceRepository'
 import { EventRepository } from './repositories/EventRepository'
@@ -16,31 +17,87 @@ import { waitFor } from 'shared/utils'
 const deviceRepo = new DeviceRepository(db)
 const eventRepo = new EventRepository(db)
 
+const SESSION_PATH = path.join(app.getPath('userData'), 'session.json')
+
+async function saveSession(user: any, token: string) {
+  try {
+    await writeFile(SESSION_PATH, JSON.stringify({ user, token }), 'utf-8')
+  } catch (error) {
+    console.error('Failed to save session:', error)
+  }
+}
+
+async function deleteSession() {
+  try {
+    await rm(SESSION_PATH, { force: true })
+  } catch (error) {
+    console.error('Failed to delete session:', error)
+  }
+}
+
+async function loadSession() {
+  try {
+    const raw = await readFile(SESSION_PATH, 'utf-8')
+    const parsed = JSON.parse(raw)
+    if (parsed && parsed.token && parsed.user) {
+      apiClient.setToken(parsed.token)
+      return parsed.user
+    }
+  } catch {
+    // Session file doesn't exist or is invalid
+  }
+  return null
+}
+
 makeAppWithSingleInstanceLock(async () => {
   await app.whenReady()
   const window = await makeAppSetup(MainWindow)
 
-  ipcMain.handle('api:login', (_, email: string, password: string) =>
-    apiClient.login(email, password)
-  )
+  ipcMain.handle('api:login', async (_, email: string, password: string) => {
+    const result = await apiClient.login(email, password)
+    if (result.ok && result.token && result.user) {
+      await saveSession(result.user, result.token)
+    }
+    return result
+  })
 
   ipcMain.handle(
     'api:register',
-    (
+    async (
       _,
       name: string,
       email: string,
       password: string,
       passwordConfirmation: string
-    ) => apiClient.register(name, email, password, passwordConfirmation)
+    ) => {
+      const result = await apiClient.register(
+        name,
+        email,
+        password,
+        passwordConfirmation
+      )
+      if (result.ok && result.token && result.user) {
+        await saveSession(result.user, result.token)
+      }
+      return result
+    }
   )
 
-  ipcMain.handle('api:logout', () => apiClient.logout())
+  ipcMain.handle('api:logout', async () => {
+    await apiClient.logout()
+    await deleteSession()
+  })
 
   ipcMain.handle('api:login-google', async () => {
     const providerToken = await startGoogleOAuth()
-    return apiClient.loginWithGoogle(providerToken)
+    const result = await apiClient.loginWithGoogle(providerToken)
+    if (result.ok && result.token && result.user) {
+      await saveSession(result.user, result.token)
+    }
+    return result
   })
+
+  ipcMain.handle('api:get-session', () => loadSession())
 
   ipcMain.handle('api:sync-devices', async () => {
     const apiDevices = await apiClient.getDevices()
@@ -123,10 +180,10 @@ makeAppWithSingleInstanceLock(async () => {
 
   ipcMain.handle(
     'db:update-device',
-    (_, uuid: string, data: UpdateDeviceInput) => {
+    async (_, uuid: string, data: UpdateDeviceInput) => {
       deviceRepo.update(uuid, data)
-      apiClient
-        .updateDevice(uuid, {
+      try {
+        await apiClient.updateDevice(uuid, {
           name: data.name,
           type: data.type,
           model: data.model,
@@ -136,20 +193,52 @@ makeAppWithSingleInstanceLock(async () => {
           installation_date: data.installation_date,
           notes: data.notes,
         })
-        .catch(e => console.warn('API updateDevice failed:', e))
+      } catch (e) {
+        console.warn('API updateDevice failed:', e)
+      }
     }
   )
 
-  ipcMain.handle('db:delete-device', (_, uuid: string) => {
+  ipcMain.handle('db:delete-device', async (_, uuid: string) => {
     deviceRepo.delete(uuid)
-    apiClient
-      .deleteDevice(uuid)
-      .catch(e => console.warn('API deleteDevice failed:', e))
+    try {
+      await apiClient.deleteDevice(uuid)
+    } catch (e) {
+      console.warn('API deleteDevice failed:', e)
+    }
   })
 
-  ipcMain.handle('db:get-events', (_, device_uuid: string) =>
-    eventRepo.findByDevice(device_uuid)
-  )
+  ipcMain.handle('db:get-events', async (_, device_uuid: string) => {
+    try {
+      const apiEvents = await apiClient.getDeviceEvents(device_uuid)
+
+      // Clear existing cached edit/installation events to prevent duplication
+      db.prepare(
+        "DELETE FROM device_events WHERE device_uuid = ? AND type IN ('edit', 'installation', 'install')"
+      ).run(device_uuid)
+
+      const insertStmt = db.prepare(
+        'INSERT INTO device_events (device_uuid, type, title, description, user, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+      )
+
+      for (const e of apiEvents) {
+        const mappedType = e.type === 'install' ? 'installation' : e.type
+        if (mappedType === 'edit' || mappedType === 'installation') {
+          insertStmt.run(
+            device_uuid,
+            mappedType,
+            e.title,
+            e.description ?? null,
+            e.user ?? null,
+            e.date
+          )
+        }
+      }
+    } catch (e) {
+      console.warn('API getDeviceEvents failed, using cached events:', e)
+    }
+    return eventRepo.findByDevice(device_uuid)
+  })
 
   ipcMain.handle('db:add-event', (_, data: AddEventInput) =>
     eventRepo.create(data)
@@ -173,6 +262,12 @@ makeAppWithSingleInstanceLock(async () => {
   )
 
   ipcMain.handle(
+    'api:create-fault',
+    (_, uuid: string, payload: import('shared/types').CreateFaultInput) =>
+      apiClient.createFault(uuid, payload)
+  )
+
+  ipcMain.handle(
     'qr:save-png',
     async (_, dataUrl: string, defaultName: string) => {
       const { canceled, filePath } = await dialog.showSaveDialog({
@@ -192,6 +287,12 @@ makeAppWithSingleInstanceLock(async () => {
       await waitFor(1000)
       window.webContents.reload()
     })
+  }
+})
+
+app.on('will-quit', () => {
+  db.close()
+})
   }
 })
 

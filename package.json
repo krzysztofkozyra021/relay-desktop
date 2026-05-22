@@ -30,7 +30,7 @@
     "lint": "biome check --no-errors-on-unmatched",
     "lint:fix": "biome check --write --no-errors-on-unmatched --assist-enabled=true",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
+    "test": "(cd node_modules/.pnpm/better-sqlite3@12.9.0/node_modules/better-sqlite3 && npx prebuild-install) && vitest run",
     "test:watch": "vitest",
     "test:ui": "vitest --ui"
   },

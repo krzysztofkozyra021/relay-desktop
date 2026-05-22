@@ -5,6 +5,7 @@ import type {
   UpdateDeviceInput,
   AddEventInput,
   ApiLoginResult,
+  CreateFaultInput,
   FaultReport,
   FaultStatus,
 } from 'shared/types'
@@ -23,6 +24,7 @@ declare global {
       logout: () => Promise<void>
       syncDevices: () => Promise<Device[]>
       loginWithGoogle: () => Promise<ApiLoginResult>
+      getSession: () => Promise<ApiUser | null>
     }
     dbAPI: {
       getDevices: () => Promise<Device[]>
@@ -49,6 +51,10 @@ declare global {
     faultAPI: {
       getFaults: (status?: FaultStatus) => Promise<FaultReport[]>
       getDeviceFaults: (uuid: string) => Promise<FaultReport[]>
+      createFault: (
+        deviceUuid: string,
+        payload: CreateFaultInput
+      ) => Promise<FaultReport | null>
       updateFaultStatus: (
         id: number,
         status: FaultStatus
@@ -83,6 +89,7 @@ contextBridge.exposeInMainWorld('authAPI', {
   logout: () => ipcRenderer.invoke('api:logout'),
   syncDevices: () => ipcRenderer.invoke('api:sync-devices'),
   loginWithGoogle: () => ipcRenderer.invoke('api:login-google'),
+  getSession: () => ipcRenderer.invoke('api:get-session'),
 })
 
 contextBridge.exposeInMainWorld('dbAPI', {
@@ -129,6 +136,8 @@ contextBridge.exposeInMainWorld('faultAPI', {
     ipcRenderer.invoke('api:get-faults', status),
   getDeviceFaults: (uuid: string) =>
     ipcRenderer.invoke('api:get-device-faults', uuid),
+  createFault: (deviceUuid: string, payload: CreateFaultInput) =>
+    ipcRenderer.invoke('api:create-fault', deviceUuid, payload),
   updateFaultStatus: (id: number, status: FaultStatus) =>
     ipcRenderer.invoke('api:update-fault-status', id, status),
 })
