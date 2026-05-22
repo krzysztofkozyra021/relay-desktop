@@ -288,5 +288,43 @@ describe('RelayApiClient (Unit)', () => {
       mockFetchError({})
       expect(await client.updateFaultStatus(7, 'resolved')).toBeNull()
     })
+
+    it('creates a fault via POST and returns the parsed FaultReport on success', async () => {
+      const client = await importFreshClient()
+      const fakeFault = {
+        id: 42,
+        device_uuid: 'abc-123',
+        title: 'Brak zasilania',
+        description: 'Urządzenie nie reaguje',
+        reported_by: 'Jan Kowalski',
+        contact: 'jan@example.com',
+        status: 'pending' as const,
+        resolved_at: null,
+        created_at: '2026-05-21T10:00:00Z',
+        updated_at: '2026-05-21T10:00:00Z',
+      }
+      const payload = {
+        title: 'Brak zasilania',
+        description: 'Urządzenie nie reaguje',
+        reported_by: 'Jan Kowalski',
+        contact: 'jan@example.com',
+      }
+      mockFetchOk(fakeFault)
+      const result = await client.createFault('abc-123', payload)
+      expect(result).toEqual(fakeFault)
+      const [url, init] = fetchMock.mock.calls.at(-1) ?? []
+      expect(url).toContain('/api/devices/abc-123/faults')
+      expect(init.method).toBe('POST')
+      expect(JSON.parse(init.body)).toEqual(payload)
+    })
+
+    it('returns null when createFault request fails', async () => {
+      const client = await importFreshClient()
+      mockFetchError({ message: 'Validation failed' }, 422)
+      const result = await client.createFault('abc-123', {
+        title: 'Brak zasilania',
+      })
+      expect(result).toBeNull()
+    })
   })
 })
