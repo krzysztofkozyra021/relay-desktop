@@ -49,32 +49,49 @@ function sortFaults(faults: FaultReport[]): FaultReport[] {
 }
 
 export function FaultsScreen({
+  canManage,
   onFaultCountChange,
 }: {
+  canManage: boolean
   onFaultCountChange?: (count: number) => void
 }) {
   const [faults, setFaults] = useState<FaultReport[]>([])
   const [loading, setLoading] = useState(true)
 
-  const load = async () => {
-    setLoading(true)
-    const all = await window.faultAPI.getFaults()
-    const active = all.filter(f => f.status !== 'resolved')
-    setFaults(sortFaults(active))
-    onFaultCountChange?.(active.length)
-    setLoading(false)
+  const load = async (silent = false) => {
+    if (!canManage) {
+      setLoading(false)
+      return
+    }
+    if (!silent) setLoading(true)
+    try {
+      const all = await window.faultAPI.getFaults()
+      const active = all.filter(fault => fault.status !== 'resolved')
+      setFaults(sortFaults(active))
+      onFaultCountChange?.(active.length)
+    } catch (error) {
+      console.error('Failed to load faults in background:', error)
+    } finally {
+      if (!silent) setLoading(false)
+    }
   }
 
   useEffect(() => {
     load()
+
+    const interval = setInterval(() => {
+      load(true)
+    }, 30000)
+
+    return () => clearInterval(interval)
   }, [])
 
   const handleStatusChange = async (id: number, status: FaultStatus) => {
     const updated = await window.faultAPI.updateFaultStatus(id, status)
     if (updated) {
       setFaults(prev => {
-        const next = prev.map(f => (f.id === id ? updated : f))
-        const active = next.filter(f => f.status !== 'resolved')
+        const next = prev.map(fault => (fault.id === id ? updated : fault))
+        const active = next.filter(fault => fault.status !== 'resolved')
         onFaultCountChange?.(active.length)
         return sortFaults(active)
       })
@@ -143,24 +160,28 @@ export function FaultsScreen({
                   </p>
                 )}
               </div>
-              <div className="flex gap-2 shrink-0">
-                {fault.status === 'pending' && (
+              {canManage && (
+                <div className="flex gap-2 shrink-0">
+                  {fault.status === 'pending' && (
+                    <button
+                      className="px-3 py-1.5 text-xs font-medium bg-info/10 hover:bg-info/20 text-info rounded-lg transition-colors cursor-pointer"
+                      onClick={() =>
+                        handleStatusChange(fault.id, 'in_progress')
+                      }
+                      type="button"
+                    >
+                      Przyjmij
+                    </button>
+                  )}
                   <button
-                    className="px-3 py-1.5 text-xs font-medium bg-info/10 hover:bg-info/20 text-info rounded-lg transition-colors cursor-pointer"
-                    onClick={() => handleStatusChange(fault.id, 'in_progress')}
+                    className="px-3 py-1.5 text-xs font-medium bg-success/10 hover:bg-success/20 text-success rounded-lg transition-colors cursor-pointer"
+                    onClick={() => handleStatusChange(fault.id, 'resolved')}
                     type="button"
                   >
-                    Przyjmij
+                    Rozwiąż
                   </button>
-                )}
-                <button
-                  className="px-3 py-1.5 text-xs font-medium bg-success/10 hover:bg-success/20 text-success rounded-lg transition-colors cursor-pointer"
-                  onClick={() => handleStatusChange(fault.id, 'resolved')}
-                  type="button"
-                >
-                  Rozwiąż
-                </button>
-              </div>
+                </div>
+              )}
             </div>
           </div>
         ))}

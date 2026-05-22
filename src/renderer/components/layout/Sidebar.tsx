@@ -1,10 +1,11 @@
 import { AlertTriangle, Monitor, LogOut, Server } from 'lucide-react'
 import { cn } from 'renderer/lib/utils'
 import type { ApiUser } from 'shared/types'
+import { canManageFaults } from 'shared/utils'
 
 type NavItem = { id: string; label: string; icon: React.ReactNode }
 
-const NAV_ITEMS: NavItem[] = [
+const ALL_NAV_ITEMS: NavItem[] = [
   { id: 'devices', label: 'Urządzenia', icon: <Server size={17} /> },
   { id: 'faults', label: 'Usterki', icon: <AlertTriangle size={17} /> },
 ]
@@ -33,6 +34,9 @@ export function Sidebar({
 }: Props) {
   const displayName = user.name || user.email
   const role = roleLabel(user)
+  const navItems = canManageFaults(user)
+    ? ALL_NAV_ITEMS
+    : ALL_NAV_ITEMS.filter(item => item.id !== 'faults')
 
   return (
     <div className="w-60 shrink-0 bg-sidebar flex flex-col h-full">
@@ -44,7 +48,7 @@ export function Sidebar({
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-0.5">
-        {NAV_ITEMS.map(item => (
+        {navItems.map(item => (
           <button
             className={cn(
               'w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-left cursor-pointer',

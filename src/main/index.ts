@@ -173,6 +173,12 @@ makeAppWithSingleInstanceLock(async () => {
   )
 
   ipcMain.handle(
+    'api:create-fault',
+    (_, uuid: string, payload: import('shared/types').CreateFaultInput) =>
+      apiClient.createFault(uuid, payload)
+  )
+
+  ipcMain.handle(
     'qr:save-png',
     async (_, dataUrl: string, defaultName: string) => {
       const { canceled, filePath } = await dialog.showSaveDialog({

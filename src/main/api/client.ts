@@ -1,6 +1,7 @@
 import type {
   ApiLoginResult,
   ApiUser,
+  CreateFaultInput,
   FaultReport,
   FaultStatus,
 } from 'shared/types'
@@ -194,6 +195,19 @@ class RelayApiClient {
     )
     if (!ok) return []
     return Array.isArray(data) ? data : []
+  }
+
+  async createFault(
+    deviceUuid: string,
+    payload: CreateFaultInput
+  ): Promise<FaultReport | null> {
+    const { ok, data } = await this.req<FaultReport>(
+      'POST',
+      `/api/devices/${deviceUuid}/faults`,
+      payload
+    )
+    if (!ok) return null
+    return data
   }
 
   async updateFaultStatus(
