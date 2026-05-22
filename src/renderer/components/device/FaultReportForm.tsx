@@ -31,7 +31,8 @@ export function FaultReportForm({ onSubmit, onClose }: Props) {
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-foreground">Zgłoś usterkę</h3>
         <button
-          className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+          className="text-muted-foreground hover:text-foreground transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-default"
+          disabled={submitting}
           onClick={onClose}
           type="button"
         >
@@ -46,8 +47,9 @@ export function FaultReportForm({ onSubmit, onClose }: Props) {
         Tytuł
       </label>
       <input
-        className="w-full px-3.5 py-2.5 border border-border rounded-xl text-sm text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-warning/30 focus:border-warning transition-colors placeholder:text-muted-foreground mb-4"
+        className="w-full px-3.5 py-2.5 border border-border rounded-xl text-sm text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-warning/30 focus:border-warning transition-colors placeholder:text-muted-foreground mb-4 disabled:opacity-60 disabled:cursor-default"
         id="fault-title"
+        disabled={submitting}
         onChange={e => setTitle(e.target.value)}
         placeholder="Krótki tytuł, np. „Brak zasilania”…"
         type="text"
@@ -61,8 +63,9 @@ export function FaultReportForm({ onSubmit, onClose }: Props) {
         Opis usterki (opcjonalny)
       </label>
       <textarea
-        className="w-full px-3.5 py-2.5 border border-border rounded-xl text-sm text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-warning/30 focus:border-warning transition-colors resize-none placeholder:text-muted-foreground"
+        className="w-full px-3.5 py-2.5 border border-border rounded-xl text-sm text-foreground bg-background focus:outline-none focus:ring-2 focus:ring-warning/30 focus:border-warning transition-colors resize-none placeholder:text-muted-foreground disabled:opacity-60 disabled:cursor-default"
         id="fault-desc"
+        disabled={submitting}
         onChange={e => setDesc(e.target.value)}
         placeholder="Opisz usterkę…"
         rows={3}
@@ -73,7 +76,8 @@ export function FaultReportForm({ onSubmit, onClose }: Props) {
 
       <div className="flex justify-end gap-2 mt-4">
         <button
-          className="px-4 py-2 bg-secondary hover:bg-border text-text-secondary text-sm rounded-lg border border-border transition-colors cursor-pointer"
+          className="px-4 py-2 bg-secondary hover:bg-border text-text-secondary text-sm rounded-lg border border-border transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-default"
+          disabled={submitting}
           onClick={onClose}
           type="button"
         >

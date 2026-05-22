@@ -225,7 +225,10 @@ class RelayApiClient {
 
   async getDeviceEvents(uuid: string): Promise<any[]> {
     if (!this.token) return []
-    const { ok, data } = await this.req<any[]>('GET', `/api/devices/${uuid}/events`)
+    const { ok, data } = await this.req<any[]>(
+      'GET',
+      `/api/devices/${uuid}/events`
+    )
     if (!ok) return []
     return Array.isArray(data) ? data : []
   }

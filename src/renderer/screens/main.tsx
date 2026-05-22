@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { ArrowLeft, Plus, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Plus, RefreshCw, X } from 'lucide-react'
 import type { ApiUser, Device } from 'shared/types'
 import { canManageFaults } from 'shared/utils'
 import { Sidebar } from 'renderer/components/layout/Sidebar'
@@ -48,6 +48,7 @@ export function MainScreen({
     return stored ? new Date(stored) : null
   })
   const [syncLabel, setSyncLabel] = useState('')
+  const [showProfile, setShowProfile] = useState(false)
   const tickRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const fetchDevices = async () => {
@@ -158,8 +159,10 @@ export function MainScreen({
       <Sidebar
         active={mode === 'faults' ? 'faults' : 'devices'}
         faultCount={activeFaultCount}
+        deviceCount={devices.length}
         onLogout={onLogout}
         onNavigate={handleNavigate}
+        onShowProfile={() => setShowProfile(true)}
         user={user}
       />
 
@@ -262,6 +265,104 @@ export function MainScreen({
           )}
         </main>
       </div>
+
+      {showProfile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm no-print">
+          <div className="bg-card border border-border w-96 rounded-2xl shadow-xl overflow-hidden p-6 relative animate-in fade-in-50 zoom-in-95 duration-200">
+            <button
+              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              onClick={() => setShowProfile(false)}
+              type="button"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="flex flex-col items-center text-center mt-4">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-tr from-primary to-accent-blue flex items-center justify-center text-white text-2xl font-bold border-2 border-border shadow-md mb-4">
+                {(user.name || user.email).charAt(0).toUpperCase()}
+              </div>
+
+              <h2 className="text-lg font-bold text-foreground">
+                {user.name || 'Użytkownik'}
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">{user.email}</p>
+
+              <span className="mt-3 px-2.5 py-1 bg-primary/10 border border-primary/20 text-primary text-xs font-semibold rounded-full uppercase tracking-wider">
+                {user.is_admin
+                  ? 'Administrator'
+                  : user.is_installer
+                    ? 'Instalator'
+                    : user.is_service
+                      ? 'Serwisant'
+                      : 'Użytkownik'}
+              </span>
+            </div>
+
+            <div className="mt-6 border-t border-border pt-5 space-y-4">
+              <div>
+                <p className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                  Uprawnienia systemowe
+                </p>
+                <div className="mt-2.5 space-y-2">
+                  <div className="flex items-center justify-between text-xs py-1 border-b border-border/40">
+                    <span className="text-foreground font-medium">
+                      Zarządzanie urządzeniami
+                    </span>
+                    <span
+                      className={
+                        user.is_admin || user.is_installer
+                          ? 'text-success font-semibold'
+                          : 'text-muted-foreground'
+                      }
+                    >
+                      {user.is_admin || user.is_installer
+                        ? 'Dozwolone'
+                        : 'Brak dostępu'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs py-1 border-b border-border/40">
+                    <span className="text-foreground font-medium">
+                      Zarządzanie usterkami
+                    </span>
+                    <span
+                      className={
+                        user.is_admin || user.is_service
+                          ? 'text-success font-semibold'
+                          : 'text-muted-foreground'
+                      }
+                    >
+                      {user.is_admin || user.is_service
+                        ? 'Dozwolone'
+                        : 'Brak dostępu'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-secondary/20 rounded-xl p-3 border border-border/30">
+                <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider mb-1">
+                  Status profilu
+                </p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Twój profil jest w trybie podglądu. Jeśli dane są niepoprawne
+                  lub wymagają aktualizacji, skontaktuj się z administratorem
+                  systemu Relay.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <button
+                className="px-4 py-2 bg-secondary hover:bg-border text-text-secondary text-sm font-semibold rounded-lg border border-border transition-colors cursor-pointer"
+                onClick={() => setShowProfile(false)}
+                type="button"
+              >
+                Zamknij podgląd
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

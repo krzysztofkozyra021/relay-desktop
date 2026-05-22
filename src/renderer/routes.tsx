@@ -9,6 +9,7 @@ import { MainScreen } from './screens/main'
 export function AppRoutes() {
   const [user, setUser] = useState<ApiUser | null>(null)
   const [checkingSession, setCheckingSession] = useState(true)
+  const [loggingOut, setLoggingOut] = useState(false)
 
   useEffect(() => {
     const check = async () => {
@@ -27,8 +28,15 @@ export function AppRoutes() {
   }, [])
 
   const handleLogout = async () => {
-    await window.authAPI.logout()
-    setUser(null)
+    setLoggingOut(true)
+    try {
+      await window.authAPI.logout()
+    } catch (err) {
+      console.error('Failed to log out remotely:', err)
+    } finally {
+      setUser(null)
+      setLoggingOut(false)
+    }
   }
 
   if (checkingSession) {
@@ -42,6 +50,22 @@ export function AppRoutes() {
         </div>
         <p className="text-xs text-muted-foreground tracking-widest uppercase">
           Wczytywanie sesji...
+        </p>
+      </div>
+    )
+  }
+
+  if (loggingOut) {
+    return (
+      <div className="flex flex-col h-screen items-center justify-center bg-background gap-4">
+        <div className="flex items-center gap-2.5 animate-pulse">
+          <Monitor className="text-primary" size={32} />
+          <span className="text-foreground font-bold text-2xl tracking-tight">
+            Relay
+          </span>
+        </div>
+        <p className="text-xs text-muted-foreground tracking-widest uppercase">
+          Wylogowywanie...
         </p>
       </div>
     )

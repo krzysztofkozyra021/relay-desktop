@@ -70,7 +70,12 @@ makeAppWithSingleInstanceLock(async () => {
       password: string,
       passwordConfirmation: string
     ) => {
-      const result = await apiClient.register(name, email, password, passwordConfirmation)
+      const result = await apiClient.register(
+        name,
+        email,
+        password,
+        passwordConfirmation
+      )
       if (result.ok && result.token && result.user) {
         await saveSession(result.user, result.token)
       }
@@ -206,14 +211,16 @@ makeAppWithSingleInstanceLock(async () => {
   ipcMain.handle('db:get-events', async (_, device_uuid: string) => {
     try {
       const apiEvents = await apiClient.getDeviceEvents(device_uuid)
-      
+
       // Clear existing cached edit/installation events to prevent duplication
-      db.prepare("DELETE FROM device_events WHERE device_uuid = ? AND type IN ('edit', 'installation', 'install')").run(device_uuid)
-      
+      db.prepare(
+        "DELETE FROM device_events WHERE device_uuid = ? AND type IN ('edit', 'installation', 'install')"
+      ).run(device_uuid)
+
       const insertStmt = db.prepare(
         'INSERT INTO device_events (device_uuid, type, title, description, user, created_at) VALUES (?, ?, ?, ?, ?, ?)'
       )
-      
+
       for (const e of apiEvents) {
         const mappedType = e.type === 'install' ? 'installation' : e.type
         if (mappedType === 'edit' || mappedType === 'installation') {

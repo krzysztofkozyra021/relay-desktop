@@ -22,16 +22,16 @@ function formatRelative(iso: string): string {
       hour: '2-digit',
       minute: '2-digit',
     })
-    
+
     const diffMs = Date.now() - dateObj.getTime()
     const diffMin = Math.floor(diffMs / 60_000)
-    
+
     if (diffMin < 1) return `Zgłoszono: przed chwilą (o ${timeStr})`
     if (diffMin < 60) return `Zgłoszono: ${diffMin} min. temu (o ${timeStr})`
-    
+
     const diffH = Math.floor(diffMin / 60)
     if (diffH < 24) return `Zgłoszono: ${diffH} godz. temu (o ${timeStr})`
-    
+
     const dateStr = dateObj.toLocaleDateString('pl-PL', {
       day: '2-digit',
       month: '2-digit',
@@ -66,7 +66,10 @@ export function FaultsScreen({
   const [allFaults, setAllFaults] = useState<FaultReport[]>([])
   const [filter, setFilter] = useState<'all' | FaultStatus>('all')
   const [loading, setLoading] = useState(true)
-  const [updatingFault, setUpdatingFault] = useState<{ id: number; status: FaultStatus } | null>(null)
+  const [updatingFault, setUpdatingFault] = useState<{
+    id: number
+    status: FaultStatus
+  } | null>(null)
 
   const load = async (silent = false) => {
     if (!canManage) {
@@ -130,7 +133,9 @@ export function FaultsScreen({
 
   const countAll = allFaults.length
   const countPending = allFaults.filter(f => f.status === 'pending').length
-  const countInProgress = allFaults.filter(f => f.status === 'in_progress').length
+  const countInProgress = allFaults.filter(
+    f => f.status === 'in_progress'
+  ).length
   const countResolved = allFaults.filter(f => f.status === 'resolved').length
 
   return (
@@ -139,13 +144,13 @@ export function FaultsScreen({
         {/* Premium tabs selector */}
         <div className="flex border-b border-border shrink-0">
           <button
-            onClick={() => setFilter('all')}
             className={cn(
-              "pb-3 px-4 font-semibold text-sm transition-colors border-b-2 -mb-[2px] flex items-center gap-2 cursor-pointer",
+              'pb-3 px-4 font-semibold text-sm transition-colors border-b-2 -mb-[2px] flex items-center gap-2 cursor-pointer',
               filter === 'all'
-                ? "border-primary text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                ? 'border-primary text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
             )}
+            onClick={() => setFilter('all')}
             type="button"
           >
             Wszystkie
@@ -154,13 +159,13 @@ export function FaultsScreen({
             </span>
           </button>
           <button
-            onClick={() => setFilter('pending')}
             className={cn(
-              "pb-3 px-4 font-semibold text-sm transition-colors border-b-2 -mb-[2px] flex items-center gap-2 cursor-pointer",
+              'pb-3 px-4 font-semibold text-sm transition-colors border-b-2 -mb-[2px] flex items-center gap-2 cursor-pointer',
               filter === 'pending'
-                ? "border-warning text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                ? 'border-warning text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
             )}
+            onClick={() => setFilter('pending')}
             type="button"
           >
             Nowe
@@ -169,13 +174,13 @@ export function FaultsScreen({
             </span>
           </button>
           <button
-            onClick={() => setFilter('in_progress')}
             className={cn(
-              "pb-3 px-4 font-semibold text-sm transition-colors border-b-2 -mb-[2px] flex items-center gap-2 cursor-pointer",
+              'pb-3 px-4 font-semibold text-sm transition-colors border-b-2 -mb-[2px] flex items-center gap-2 cursor-pointer',
               filter === 'in_progress'
-                ? "border-info text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                ? 'border-info text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
             )}
+            onClick={() => setFilter('in_progress')}
             type="button"
           >
             W trakcie
@@ -184,13 +189,13 @@ export function FaultsScreen({
             </span>
           </button>
           <button
-            onClick={() => setFilter('resolved')}
             className={cn(
-              "pb-3 px-4 font-semibold text-sm transition-colors border-b-2 -mb-[2px] flex items-center gap-2 cursor-pointer",
+              'pb-3 px-4 font-semibold text-sm transition-colors border-b-2 -mb-[2px] flex items-center gap-2 cursor-pointer',
               filter === 'resolved'
-                ? "border-success text-foreground"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                ? 'border-success text-foreground'
+                : 'border-transparent text-muted-foreground hover:text-foreground'
             )}
+            onClick={() => setFilter('resolved')}
             type="button"
           >
             Rozwiązane
@@ -263,9 +268,10 @@ export function FaultsScreen({
                             }
                             type="button"
                           >
-                            {updatingFault?.id === fault.id && updatingFault?.status === 'in_progress' ? (
+                            {updatingFault?.id === fault.id &&
+                            updatingFault?.status === 'in_progress' ? (
                               <>
-                                <Loader2 size={12} className="animate-spin" />
+                                <Loader2 className="animate-spin" size={12} />
                                 Przyjmowanie…
                               </>
                             ) : (
@@ -275,12 +281,15 @@ export function FaultsScreen({
                           <button
                             className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold bg-success/10 hover:bg-success/20 text-success rounded-lg transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default"
                             disabled={updatingFault !== null}
-                            onClick={() => handleStatusChange(fault.id, 'resolved')}
+                            onClick={() =>
+                              handleStatusChange(fault.id, 'resolved')
+                            }
                             type="button"
                           >
-                            {updatingFault?.id === fault.id && updatingFault?.status === 'resolved' ? (
+                            {updatingFault?.id === fault.id &&
+                            updatingFault?.status === 'resolved' ? (
                               <>
-                                <Loader2 size={12} className="animate-spin" />
+                                <Loader2 className="animate-spin" size={12} />
                                 Rozwiązywanie…
                               </>
                             ) : (
@@ -301,9 +310,10 @@ export function FaultsScreen({
                             }
                             type="button"
                           >
-                            {updatingFault?.id === fault.id && updatingFault?.status === 'pending' ? (
+                            {updatingFault?.id === fault.id &&
+                            updatingFault?.status === 'pending' ? (
                               <>
-                                <Loader2 size={12} className="animate-spin" />
+                                <Loader2 className="animate-spin" size={12} />
                                 Cofanie…
                               </>
                             ) : (
@@ -313,12 +323,15 @@ export function FaultsScreen({
                           <button
                             className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold bg-success/10 hover:bg-success/20 text-success rounded-lg transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default"
                             disabled={updatingFault !== null}
-                            onClick={() => handleStatusChange(fault.id, 'resolved')}
+                            onClick={() =>
+                              handleStatusChange(fault.id, 'resolved')
+                            }
                             type="button"
                           >
-                            {updatingFault?.id === fault.id && updatingFault?.status === 'resolved' ? (
+                            {updatingFault?.id === fault.id &&
+                            updatingFault?.status === 'resolved' ? (
                               <>
-                                <Loader2 size={12} className="animate-spin" />
+                                <Loader2 className="animate-spin" size={12} />
                                 Rozwiązywanie…
                               </>
                             ) : (
@@ -338,9 +351,10 @@ export function FaultsScreen({
                           }
                           type="button"
                         >
-                          {updatingFault?.id === fault.id && updatingFault?.status === 'pending' ? (
+                          {updatingFault?.id === fault.id &&
+                          updatingFault?.status === 'pending' ? (
                             <>
-                              <Loader2 size={12} className="animate-spin" />
+                              <Loader2 className="animate-spin" size={12} />
                               Otwieranie…
                             </>
                           ) : (

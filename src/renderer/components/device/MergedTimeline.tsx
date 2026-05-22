@@ -7,7 +7,7 @@ import {
   Loader2,
 } from 'lucide-react'
 import { cn } from 'renderer/lib/utils'
-import type { DeviceEvent, FaultReport, FaultStatus } from 'shared/types'
+import type { ApiUser, DeviceEvent, FaultReport, FaultStatus } from 'shared/types'
 import { FaultStatusBadge } from './FaultStatusBadge'
 
 function formatDate(iso: string): string {
@@ -65,6 +65,7 @@ type TimelineItem =
 
 type MergedTimelineProps = {
   canManage: boolean
+  currentUser: ApiUser
   events: DeviceEvent[]
   faults: FaultReport[]
   onFaultStatusChange: (id: number, status: FaultStatus) => Promise<void>
@@ -73,6 +74,7 @@ type MergedTimelineProps = {
 
 export function MergedTimeline({
   canManage,
+  currentUser,
   events,
   faults,
   onFaultStatusChange,
@@ -181,9 +183,10 @@ export function MergedTimeline({
                         }
                         type="button"
                       >
-                        {updatingFault?.id === fault.id && updatingFault?.status === 'in_progress' ? (
+                        {updatingFault?.id === fault.id &&
+                        updatingFault?.status === 'in_progress' ? (
                           <>
-                            <Loader2 size={12} className="animate-spin" />
+                            <Loader2 className="animate-spin" size={12} />
                             Przyjmowanie…
                           </>
                         ) : (
@@ -193,12 +196,15 @@ export function MergedTimeline({
                       <button
                         className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold bg-success/10 hover:bg-success/20 text-success rounded-lg transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default"
                         disabled={updatingFault !== null}
-                        onClick={() => onFaultStatusChange(fault.id, 'resolved')}
+                        onClick={() =>
+                          onFaultStatusChange(fault.id, 'resolved')
+                        }
                         type="button"
                       >
-                        {updatingFault?.id === fault.id && updatingFault?.status === 'resolved' ? (
+                        {updatingFault?.id === fault.id &&
+                        updatingFault?.status === 'resolved' ? (
                           <>
-                            <Loader2 size={12} className="animate-spin" />
+                            <Loader2 className="animate-spin" size={12} />
                             Rozwiązywanie…
                           </>
                         ) : (
@@ -209,56 +215,78 @@ export function MergedTimeline({
                   )}
 
                   {/* Status: in_progress */}
-                  {fault.status === 'in_progress' && (
-                    <>
-                      <button
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold bg-warning/10 hover:bg-warning/20 text-warning rounded-lg transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default"
-                        disabled={updatingFault !== null}
-                        onClick={() =>
-                          onFaultStatusChange(fault.id, 'pending')
-                        }
-                        type="button"
-                      >
-                        {updatingFault?.id === fault.id && updatingFault?.status === 'pending' ? (
-                          <>
-                            <Loader2 size={12} className="animate-spin" />
-                            Cofanie…
-                          </>
-                        ) : (
-                          'Cofnij przyjęcie'
-                        )}
-                      </button>
-                      <button
-                        className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold bg-success/10 hover:bg-success/20 text-success rounded-lg transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default"
-                        disabled={updatingFault !== null}
-                        onClick={() => onFaultStatusChange(fault.id, 'resolved')}
-                        type="button"
-                      >
-                        {updatingFault?.id === fault.id && updatingFault?.status === 'resolved' ? (
-                          <>
-                            <Loader2 size={12} className="animate-spin" />
-                            Rozwiązywanie…
-                          </>
-                        ) : (
-                          'Rozwiąż'
-                        )}
-                      </button>
-                    </>
-                  )}
+                  {fault.status === 'in_progress' && (() => {
+                    const acceptEvent = events.find(
+                      e =>
+                        e.title === 'Przyjęto usterkę' &&
+                        e.description === `FaultReport updated: ${fault.title}`
+                    )
+                    const acceptedByOther =
+                      acceptEvent &&
+                      acceptEvent.user &&
+                      acceptEvent.user !== currentUser.email &&
+                      !currentUser.is_admin
+
+                    if (acceptedByOther) {
+                      return (
+                        <span className="text-[11px] text-muted-foreground italic bg-secondary/35 px-2.5 py-1 rounded-lg border border-border/40">
+                          Przyjęte przez: {acceptEvent.user}
+                        </span>
+                      )
+                    }
+
+                    return (
+                      <>
+                        <button
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold bg-warning/10 hover:bg-warning/20 text-warning rounded-lg transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default"
+                          disabled={updatingFault !== null}
+                          onClick={() => onFaultStatusChange(fault.id, 'pending')}
+                          type="button"
+                        >
+                          {updatingFault?.id === fault.id &&
+                          updatingFault?.status === 'pending' ? (
+                            <>
+                              <Loader2 className="animate-spin" size={12} />
+                              Cofanie…
+                            </>
+                          ) : (
+                            'Cofnij przyjęcie'
+                          )}
+                        </button>
+                        <button
+                          className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold bg-success/10 hover:bg-success/20 text-success rounded-lg transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default"
+                          disabled={updatingFault !== null}
+                          onClick={() =>
+                            onFaultStatusChange(fault.id, 'resolved')
+                          }
+                          type="button"
+                        >
+                          {updatingFault?.id === fault.id &&
+                          updatingFault?.status === 'resolved' ? (
+                            <>
+                              <Loader2 className="animate-spin" size={12} />
+                              Rozwiązywanie…
+                            </>
+                          ) : (
+                            'Rozwiąż'
+                          )}
+                        </button>
+                      </>
+                    )
+                  })()}
 
                   {/* Status: resolved */}
                   {fault.status === 'resolved' && (
                     <button
                       className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold bg-secondary hover:bg-border text-foreground rounded-lg border border-border transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-default"
                       disabled={updatingFault !== null}
-                      onClick={() =>
-                        onFaultStatusChange(fault.id, 'pending')
-                      }
+                      onClick={() => onFaultStatusChange(fault.id, 'pending')}
                       type="button"
                     >
-                      {updatingFault?.id === fault.id && updatingFault?.status === 'pending' ? (
+                      {updatingFault?.id === fault.id &&
+                      updatingFault?.status === 'pending' ? (
                         <>
-                          <Loader2 size={12} className="animate-spin" />
+                          <Loader2 className="animate-spin" size={12} />
                           Otwieranie…
                         </>
                       ) : (
