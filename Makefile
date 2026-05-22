@@ -27,6 +27,7 @@ install:
 
 .PHONY: dev
 dev:
+	@cp tests/bin/better_sqlite3_electron.node node_modules/.pnpm/better-sqlite3@12.9.0/node_modules/better-sqlite3/build/Release/better_sqlite3.node 2>/dev/null || true
 	$(PNPM) run dev
 
 .PHONY: build
@@ -47,6 +48,7 @@ typecheck:
 
 .PHONY: test
 test:
+	@cp tests/bin/better_sqlite3_node.node node_modules/.pnpm/better-sqlite3@12.9.0/node_modules/better-sqlite3/build/Release/better_sqlite3.node 2>/dev/null || true
 	$(PNPM) run test
 
 .PHONY: test\:watch
