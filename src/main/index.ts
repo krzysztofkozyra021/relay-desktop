@@ -293,9 +293,3 @@ makeAppWithSingleInstanceLock(async () => {
 app.on('will-quit', () => {
   db.close()
 })
-  }
-})
-
-app.on('will-quit', () => {
-  db.close()
-})
