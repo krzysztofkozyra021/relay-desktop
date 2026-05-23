@@ -9,9 +9,21 @@ type Props = {
   baseUrl?: string
 }
 
+export function getDeviceQrUrl(deviceId: string, baseUrl?: string): string {
+  const base = (baseUrl || RELAY_BASE_URL || '').trim()
+  if (!base) {
+    return `/device/${deviceId}`
+  }
+  let trimmedBase = base.replace(/\/+$/, '')
+  if (!trimmedBase.endsWith('/device')) {
+    trimmedBase = `${trimmedBase}/device`
+  }
+  return `${trimmedBase}/${deviceId}`
+}
+
 export function QRPreview({ deviceId, size = 96, baseUrl }: Props) {
   const [svg, setSvg] = useState('')
-  const url = `${baseUrl || RELAY_BASE_URL}/${deviceId}`
+  const url = getDeviceQrUrl(deviceId, baseUrl)
 
   useEffect(() => {
     QRCode.toString(url, {
@@ -35,10 +47,12 @@ export function QRPreview({ deviceId, size = 96, baseUrl }: Props) {
 }
 
 export async function exportDeviceQrAsPng(deviceUuid: string) {
-  const dataUrl = await QRCode.toDataURL(`${RELAY_BASE_URL}/${deviceUuid}`, {
+  const url = getDeviceQrUrl(deviceUuid)
+  const dataUrl = await QRCode.toDataURL(url, {
     errorCorrectionLevel: 'M',
     margin: 4,
     width: 1024,
   })
   return window.qrAPI.savePng(dataUrl, `relay-${deviceUuid.slice(0, 8)}.png`)
 }
+
