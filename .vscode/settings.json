@@ -31,5 +31,6 @@
     "*.css": "tailwindcss"
   },
 
-  "tailwindCSS.experimental.configFile": "src/renderer/globals.css"
+  "tailwindCSS.experimental.configFile": "src/renderer/globals.css",
+  "makefile.configureOnOpen": false
 }
